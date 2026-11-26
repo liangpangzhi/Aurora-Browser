@@ -1,0 +1,12 @@
+#!/bin/bash
+
+### This script is called before the package files are extracted.
+### At this stage the app directories are not ready yet: TRIM_PKGVAR
+### (var) is a symlink into /vol*/@appdata/<appname> whose target is
+### only created during installation, so touching the filesystem
+### here can fail on a dangling symlink and abort the whole install.
+### Directory setup therefore lives in install_callback, which runs
+### after extraction. Keep this script a no-op like the official
+### fnpack template.
+
+exit 0

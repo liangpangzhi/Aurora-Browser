@@ -1,0 +1,4233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>极光浏览器</title>
+<style>
+  :root {
+    --bg-shell: #eef1f6;
+    --bg-toolbar: #ffffff;
+    --bg-tab: #e2e7f0;
+    --bg-tab-hover: #d6dde9;
+    --bg-tab-active: #ffffff;
+    --bg-input: #f2f4f8;
+    --bg-input-focus: #ffffff;
+    --bg-card: #ffffff;
+    --bg-menu: #ffffff;
+    --bg-sidebar: #ffffff;
+    --text-primary: #1d2129;
+    --text-secondary: #4e5969;
+    --text-muted: #86909c;
+    --border-color: #e5e6eb;
+    --accent: #165dff;
+    --accent-hover: #4080ff;
+    --danger: #f53f3f;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+    --wallpaper:
+      radial-gradient(720px 340px at 12% -60px, rgba(64, 128, 255, 0.20), transparent 70%),
+      radial-gradient(680px 320px at 88% -40px, rgba(15, 198, 194, 0.18), transparent 70%),
+      radial-gradient(560px 300px at 55% -80px, rgba(114, 46, 209, 0.10), transparent 70%),
+      linear-gradient(180deg, #f4f7fc 0%, #eef1f6 100%);
+  }
+
+  [data-theme="dark"] {
+    --bg-shell: #14161a;
+    --bg-toolbar: #1e2128;
+    --bg-tab: #17191f;
+    --bg-tab-hover: #252932;
+    --bg-tab-active: #1e2128;
+    --bg-input: #282c35;
+    --bg-input-focus: #14161a;
+    --bg-card: #1e2128;
+    --bg-menu: #23262e;
+    --bg-sidebar: #1e2128;
+    --text-primary: #f2f3f5;
+    --text-secondary: #c9cdd4;
+    --text-muted: #86909c;
+    --border-color: #2e323b;
+    --accent: #3c7eff;
+    --accent-hover: #5791ff;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.28);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --wallpaper:
+      radial-gradient(720px 340px at 12% -60px, rgba(60, 126, 255, 0.16), transparent 70%),
+      radial-gradient(680px 320px at 88% -40px, rgba(15, 198, 194, 0.12), transparent 70%),
+      radial-gradient(560px 300px at 55% -80px, rgba(114, 46, 209, 0.12), transparent 70%),
+      linear-gradient(180deg, #191c22 0%, #14161a 100%);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg-shell);
+    color: var(--text-primary);
+    user-select: none;
+  }
+
+  .browser-app {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 标签栏 */
+  .tab-strip {
+    display: flex;
+    align-items: flex-end;
+    height: 38px;
+    padding: 6px 10px 0 10px;
+    background: var(--bg-shell);
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-strip::-webkit-scrollbar { display: none; }
+
+  .tab-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+    max-width: 220px;
+    height: 32px;
+    padding: 0 8px 0 10px;
+    border-radius: 8px 8px 0 0;
+    background: var(--bg-tab);
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .tab-item:hover {
+    background: var(--bg-tab-hover);
+  }
+  .tab-item.active {
+    background: var(--bg-tab-active);
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .tab-item.dragging {
+    opacity: 0.45;
+  }
+  .tab-item.drop-before {
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .tab-item.drop-after {
+    box-shadow: inset -2px 0 0 var(--accent);
+  }
+
+  .tab-fav {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tab-fav img {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+  }
+  .tab-fav-letter {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tab-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .tab-title {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tab-close {
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .tab-close:hover {
+    background: rgba(128, 128, 128, 0.2);
+    color: var(--text-primary);
+  }
+
+  .new-tab-btn {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 2px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .new-tab-btn:hover {
+    background: var(--bg-tab-hover);
+    color: var(--text-primary);
+  }
+
+  /* 导航工具栏 */
+  .nav-bar {
+    display: flex;
+    align-items: center;
+    height: 46px;
+    padding: 0 12px;
+    background: var(--bg-toolbar);
+    border-bottom: 1px solid var(--border-color);
+    gap: 8px;
+    position: relative;
+    z-index: 60;
+  }
+
+  .nav-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .nav-btn:hover:not(:disabled) {
+    background: var(--bg-input);
+    color: var(--text-primary);
+  }
+  .nav-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .nav-btn.on {
+    background: rgba(22, 93, 255, 0.12);
+    color: var(--accent);
+  }
+
+  .omnibox {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 17px;
+    background: var(--bg-input);
+    border: 1.5px solid transparent;
+    transition: all 0.15s;
+    gap: 8px;
+    min-width: 0;
+  }
+  .omnibox:focus-within {
+    background: var(--bg-input-focus);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.15);
+  }
+
+  .url-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13.5px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .star-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 4px;
+  }
+  .star-btn.starred {
+    color: #ff9a2e;
+  }
+
+  /* 地址栏下拉（历史补全 / 书签 / 搜索建议） */
+  .omni-dropdown {
+    position: fixed;
+    display: none;
+    background: var(--bg-menu);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    padding: 6px;
+    z-index: 900;
+    max-height: 46vh;
+    overflow-y: auto;
+  }
+  .omni-dropdown.open {
+    display: block;
+  }
+  .omni-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+  .omni-row .omni-kind {
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    width: 30px;
+  }
+  .omni-row .omni-main {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .omni-row .omni-sub {
+    color: var(--text-muted);
+    font-size: 11.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 46%;
+  }
+  .omni-row.selected {
+    background: var(--bg-input);
+  }
+
+  /* 顶部加载进度条 */
+  .loading-bar {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--accent);
+    width: 0%;
+    opacity: 0;
+    transition: width 0.3s ease, opacity 0.2s;
+  }
+  .loading-bar.active {
+    opacity: 1;
+    width: 85%;
+  }
+
+  /* 书签快捷栏 */
+  .bookmark-bar {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 14px;
+    background: var(--bg-toolbar);
+    border-bottom: 1px solid var(--border-color);
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .bookmark-bar::-webkit-scrollbar { display: none; }
+  .bookmark-bar.hidden {
+    display: none;
+  }
+
+  .bm-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .bm-chip:hover {
+    background: var(--bg-input);
+    color: var(--text-primary);
+  }
+  .bm-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  /* 内容行：视口 + 侧边栏 */
+  .content-row {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    position: relative;
+  }
+
+  /* 主内容视口 */
+  .viewport-container {
+    flex: 1;
+    position: relative;
+    background: var(--bg-shell);
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .tab-pane {
+    position: absolute;
+    inset: 0;
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  .tab-pane.active {
+    display: block;
+  }
+
+  .proxy-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #ffffff;
+  }
+
+  /* 侧边栏（历史 / 书签 / 下载） */
+  .sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: var(--bg-sidebar);
+    border-left: 1px solid var(--border-color);
+    display: none;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .sidebar.open {
+    display: flex;
+  }
+  .sidebar-head {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .side-tab {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .side-tab.active {
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .sidebar-head .spacer {
+    flex: 1;
+  }
+  .side-close {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 15px;
+    cursor: pointer;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+  }
+  .side-close:hover {
+    background: var(--bg-input);
+    color: var(--text-primary);
+  }
+  .sidebar-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+    min-height: 0;
+  }
+  .side-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 6px 4px;
+  }
+  .side-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12.5px;
+  }
+  .side-row:hover {
+    background: var(--bg-input);
+  }
+  .side-row .side-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .side-row .side-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+  }
+  .side-row .side-sub {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-top: 1px;
+  }
+  .side-row .side-time {
+    color: var(--text-muted);
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .side-row .side-del {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 4px;
+    flex-shrink: 0;
+  }
+  .side-row .side-del:hover {
+    color: var(--danger);
+  }
+  .side-empty {
+    color: var(--text-muted);
+    font-size: 12.5px;
+    text-align: center;
+    padding: 34px 18px;
+    line-height: 1.7;
+  }
+
+  /* 页内查找栏 */
+  .find-bar {
+    position: fixed;
+    top: 92px;
+    right: 14px;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-menu);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-md);
+    padding: 6px 8px;
+    z-index: 950;
+  }
+  .find-bar.open {
+    display: flex;
+  }
+  .find-bar input {
+    width: 170px;
+    height: 28px;
+    border: none;
+    outline: none;
+    background: var(--bg-input);
+    border-radius: 6px;
+    padding: 0 9px;
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+  .find-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    min-width: 44px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .find-btn {
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .find-btn:hover {
+    background: var(--bg-input);
+    color: var(--text-primary);
+  }
+
+  /* 主菜单弹窗 */
+  .menu-popup {
+    position: fixed;
+    top: 88px;
+    right: 10px;
+    width: 264px;
+    background: var(--bg-menu);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    padding: 6px;
+    display: none;
+    z-index: 960;
+  }
+  .menu-popup.open {
+    display: block;
+  }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .menu-item:hover {
+    background: var(--bg-input);
+  }
+  .menu-item .menu-key {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 11.5px;
+  }
+  .menu-item .menu-check {
+    margin-left: auto;
+    color: var(--accent);
+    font-size: 13px;
+  }
+  .menu-sep {
+    height: 1px;
+    background: var(--border-color);
+    margin: 5px 8px;
+  }
+  .menu-zoom-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+  }
+  .menu-zoom-row .zoom-btn {
+    width: 30px;
+    height: 28px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .menu-zoom-row .zoom-label {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .menu-info {
+    padding: 7px 10px 4px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .menu-https {
+    padding: 7px 10px 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.65;
+  }
+  .menu-https .https-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+  .menu-https a {
+    color: var(--accent);
+    text-decoration: none;
+    word-break: break-all;
+  }
+  .menu-https a:hover {
+    text-decoration: underline;
+  }
+  .menu-https .https-links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 4px 0;
+  }
+  .menu-https .https-note {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .menu-https .https-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .menu-https input {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px;
+    font-size: 12px;
+    color: var(--text-primary);
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    outline: none;
+  }
+  .menu-https button {
+    padding: 5px 10px;
+    font-size: 12px;
+    color: var(--text-primary);
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* 底部状态栏 */
+  .status-bar {
+    height: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    background: var(--bg-toolbar);
+    border-top: 1px solid var(--border-color);
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .engine-badge {
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: rgba(22, 93, 255, 0.12);
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .status-text {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .status-zoom {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .status-zoom:hover {
+    background: var(--bg-input);
+    color: var(--text-primary);
+  }
+</style>
+<style>
+  /* 新标签页（起始页） */
+  .newtab-page {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 42px 24px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--wallpaper);
+  }
+
+  .hero-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .hero-clock {
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--text-primary);
+  }
+  .hero-sub {
+    margin-top: 6px;
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+
+  .hero-search {
+    width: 100%;
+    max-width: 620px;
+    display: flex;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 26px;
+    padding: 6px 8px 6px 18px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 36px;
+    gap: 10px;
+  }
+  .hero-search select {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+  }
+  .hero-search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 15px;
+    height: 36px;
+    min-width: 0;
+  }
+  .hero-search button {
+    height: 36px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 18px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .hero-search button:hover {
+    background: var(--accent-hover);
+  }
+
+  .section-box {
+    width: 100%;
+    max-width: 860px;
+    margin-bottom: 28px;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    padding: 0 4px;
+  }
+  .add-bm-link {
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 12.5px;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 12px;
+  }
+
+  .site-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+  }
+  .site-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .site-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .site-avatar img {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+  }
+  .site-meta {
+    flex: 1;
+    min-width: 0;
+  }
+  .site-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .site-url {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+  .site-del {
+    opacity: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 5px;
+  }
+  .site-card:hover .site-del {
+    opacity: 1;
+  }
+  .site-del:hover {
+    color: var(--danger);
+  }
+
+  /* 弹窗 */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal-backdrop.open {
+    display: flex;
+  }
+  .modal-card {
+    width: 92%;
+    max-width: 420px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+  }
+  .modal-card h3 {
+    font-size: 16px;
+    margin-bottom: 14px;
+  }
+  .form-group {
+    margin-bottom: 12px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    outline: none;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .btn {
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* 窄屏紧凑布局 */
+  @media (max-width: 760px) {
+    .tab-item {
+      min-width: 86px;
+      max-width: 148px;
+      padding: 0 6px 0 8px;
+    }
+    .nav-bar {
+      padding: 0 8px;
+      gap: 4px;
+    }
+    #homeBtn, #themeBtn {
+      display: none;
+    }
+    .sidebar {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(320px, 88vw);
+      z-index: 80;
+      box-shadow: var(--shadow-md);
+    }
+    .find-bar {
+      top: 88px;
+      right: 8px;
+      left: 8px;
+    }
+    .find-bar input {
+      flex: 1;
+      width: auto;
+    }
+    .hero-clock {
+      font-size: 34px;
+    }
+    .newtab-page {
+      padding: 28px 14px 44px;
+    }
+    .status-text {
+      display: none;
+    }
+    .url-input {
+      font-size: 12.5px;
+    }
+  }
+
+  /* 触屏：标签关闭按钮常显 */
+  @media (hover: none) {
+    .tab-close {
+      opacity: 1;
+    }
+    .site-del {
+      opacity: 1;
+    }
+  }
+
+  /* 下载管理 & 飞牛目录选择器 */
+  .dl-btn { position: relative; }
+  .dl-dot {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: none;
+  }
+  .dl-btn.active .dl-dot { display: block; }
+  .dl-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 9.5px;
+    font-weight: 600;
+    line-height: 14px;
+    text-align: center;
+    display: none;
+  }
+  .dl-btn.active .dl-badge { display: block; }
+  .dl-btn.active .dl-dot { display: none; }
+  .dl-popover {
+    position: fixed;
+    top: 84px;
+    right: 12px;
+    width: min(390px, calc(100vw - 20px));
+    max-height: min(520px, calc(100vh - 120px));
+    background: var(--bg-toolbar);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 150;
+  }
+  .dl-popover.open { display: flex; }
+  .dl-pop-head {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  .dl-pop-body {
+    overflow-y: auto;
+    flex: 1;
+  }
+  .dl-toolbar {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dl-dir-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .dl-dir-path {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+    background: var(--bg-input);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+  }
+  .dl-new-row {
+    display: flex;
+    gap: 6px;
+  }
+  .dl-new-row input {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: 12px;
+    outline: none;
+  }
+  .dl-new-row input:focus { border-color: var(--accent); background: var(--bg-input-focus); }
+  .dl-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .dl-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .dl-name {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dl-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .dl-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg-input);
+    overflow: hidden;
+  }
+  .dl-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.25s ease;
+  }
+  .dl-actions {
+    display: flex;
+    gap: 8px;
+    font-size: 11.5px;
+  }
+  .dl-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 11.5px;
+    text-decoration: none;
+  }
+  .dl-link.danger { color: #e5484d; }
+  .modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 16px;
+  }
+  .modal-mask.open { display: flex; }
+  .modal-card {
+    width: min(560px, 96vw);
+    max-height: 82vh;
+    background: var(--bg-toolbar);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .modal-body {
+    padding: 12px 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+  .fs-roots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .fs-chip {
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: 11.5px;
+    cursor: pointer;
+  }
+  .fs-chip.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .fs-pathbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .fs-pathbar input {
+    flex: 1;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .fs-list {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+  }
+  .fs-row {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .fs-row:last-child { border-bottom: none; }
+  .fs-row:hover { background: var(--bg-input); }
+  .fs-tag { font-size: 11px; color: var(--text-muted); }
+  .modal-foot {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .fs-err { font-size: 11.5px; color: #e5484d; flex: 1; }
+  .omnibox-lock {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 4px;
+  }
+  .omnibox-lock:hover { background: var(--bg-tab); color: var(--text); }
+  .omnibox-lock.secure { color: #00b42a; }
+  .omnibox-lock.warn { color: #f59e0b; }
+  .tab-spinner {
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: auroraSpin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes auroraSpin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="browser-app">
+  <!-- 多标签栏 -->
+  <div class="tab-strip" id="tabStrip">
+    <button class="new-tab-btn" id="newTabBtn" title="新建标签页 (Ctrl+T)">+</button>
+  </div>
+
+  <!-- 导航工具栏 -->
+  <div class="nav-bar">
+    <button class="nav-btn" id="backBtn" title="后退 (Alt+←)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button class="nav-btn" id="forwardBtn" title="前进 (Alt+→)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <button class="nav-btn" id="reloadBtn" title="刷新 (Ctrl+R)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+    </button>
+    <button class="nav-btn" id="homeBtn" title="新标签页">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>
+    </button>
+
+    <div class="omnibox" id="omnibox">
+      <button class="omnibox-lock" id="omniboxLockBtn" type="button" title="连接与内核状态">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>
+      </button>
+      <input
+        type="text"
+        class="url-input"
+        id="urlInput"
+        placeholder="输入网址或搜索内容..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="star-btn" id="starBtn" title="收藏当前页面">☆</button>
+    </div>
+
+    <button class="nav-btn dl-btn" id="downloadsBtn" title="下载管理 (Ctrl+J)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      <span class="dl-dot"></span>
+      <span class="dl-badge" id="dlBadge"></span>
+    </button>
+    <button class="nav-btn" id="sidebarBtn" title="侧边栏：历史 / 书签 / 下载 (Ctrl+H)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg>
+    </button>
+    <button class="nav-btn" id="themeBtn" title="切换深浅色主题">
+      <svg id="themeIconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg id="themeIconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <button class="nav-btn" id="menuBtn" title="菜单">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+    </button>
+    <div class="loading-bar" id="loadingBar"></div>
+  </div>
+
+  <!-- HTTP 模式引导条（仅非安全上下文且 HTTPS 可用时显示） -->
+  <div id="httpsPromptBar" style="display:none;align-items:center;justify-content:space-between;gap:10px;padding:6px 14px;background:rgba(22,93,255,0.08);border-bottom:1px solid var(--border);font-size:12px;color:var(--text);">
+    <span>当前通过 HTTP 访问，Scramjet 满血内核无法在非安全上下文启动。</span>
+    <span style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <a id="httpsPromptLink" href="#" target="_blank" rel="noopener" style="padding:3px 10px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;font-size:11.5px;">在新窗口以 HTTPS 打开</a>
+      <button type="button" id="httpsPromptClose" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;">×</button>
+    </span>
+  </div>
+
+  <!-- 地址栏下拉 -->
+  <div class="omni-dropdown" id="omniDropdown"></div>
+
+  <!-- 书签快捷栏 -->
+  <div class="bookmark-bar" id="bookmarkBar"></div>
+
+  <!-- 内容区 -->
+  <div class="content-row">
+    <div class="viewport-container" id="viewportContainer"></div>
+
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <button class="side-tab" data-panel="history">历史</button>
+        <button class="side-tab" data-panel="bookmarks">书签</button>
+        <span class="spacer"></span>
+        <button class="side-close" id="sideCloseBtn" title="关闭侧边栏">×</button>
+      </div>
+      <div class="sidebar-body" id="sidebarBody"></div>
+    </aside>
+  </div>
+
+  <!-- 页内查找栏 -->
+  <div class="find-bar" id="findBar">
+    <input type="text" id="findInput" placeholder="在页面中查找..." autocomplete="off" spellcheck="false" />
+    <span class="find-count" id="findCount"></span>
+    <button class="find-btn" id="findPrevBtn" title="上一个 (Shift+Enter)">↑</button>
+    <button class="find-btn" id="findNextBtn" title="下一个 (Enter)">↓</button>
+    <button class="find-btn" id="findCloseBtn" title="关闭 (Esc)">×</button>
+  </div>
+
+  <!-- 标签页右键菜单 -->
+  <div class="menu-popup" id="tabContextMenu" style="width:190px;z-index:220;">
+    <button class="menu-item" data-tab-act="reload"><span>重新加载</span></button>
+    <button class="menu-item" data-tab-act="duplicate"><span>复制标签页</span></button>
+    <div class="menu-sep"></div>
+    <button class="menu-item" data-tab-act="close"><span>关闭标签页</span><span class="menu-key">Ctrl+W</span></button>
+    <button class="menu-item" data-tab-act="close-others"><span>关闭其他标签页</span></button>
+    <button class="menu-item" data-tab-act="close-right"><span>关闭右侧标签页</span></button>
+    <div class="menu-sep"></div>
+    <button class="menu-item" data-tab-act="reopen"><span>恢复关闭的标签页</span></button>
+  </div>
+
+  <!-- 主菜单（一级菜单） -->
+  <div class="menu-popup" id="menuPopup">
+    <button class="menu-item" data-action="newtab"><span>新建标签页</span><span class="menu-key">Ctrl+T</span></button>
+    <button class="menu-item" data-action="reopen-tab"><span>恢复关闭的标签页</span><span class="menu-key">Ctrl+Shift+T</span></button>
+    <button class="menu-item" data-action="history"><span>历史记录</span><span class="menu-key">Ctrl+H</span></button>
+    <button class="menu-item" data-action="bookmarks-panel"><span>书签</span></button>
+    <button class="menu-item" data-action="downloads-panel"><span>下载管理</span><span class="menu-key">Ctrl+J</span></button>
+    <button class="menu-item" data-action="toggle-bmbar"><span>显示书签栏</span><span class="menu-check" id="bmbarCheck">✓</span></button>
+    <div class="menu-sep"></div>
+    <div class="menu-zoom-row">
+      <button class="zoom-btn" data-action="zoom-out" title="缩小">−</button>
+      <span class="zoom-label" id="menuZoomLabel" data-action="zoom-reset" title="重置缩放">100%</span>
+      <button class="zoom-btn" data-action="zoom-in" title="放大">+</button>
+    </div>
+    <div class="menu-sep"></div>
+    <button class="menu-item" data-action="find"><span>在页面中查找</span><span class="menu-key">Ctrl+F</span></button>
+    <button class="menu-item" data-action="theme"><span>切换深浅色主题</span></button>
+    <button class="menu-item" data-action="diagnostics"><span>连接自检</span></button>
+    <div class="menu-sep"></div>
+    <button class="menu-item" data-action="open-settings"><span>设置</span><span class="menu-key">›</span></button>
+    <div class="menu-sep"></div>
+    <div class="menu-info" id="menuEngineInfo">内核状态检测中…</div>
+  </div>
+
+  <!-- 底部状态栏 -->
+  <div class="status-bar">
+    <span class="engine-badge" id="engineBadge" title="当前代理内核状态">检测中...</span>
+    <span class="status-text" id="statusText"></span>
+    <button class="status-zoom" id="statusZoom" title="页面缩放，点击重置为 100%">100%</button>
+  </div>
+
+  <!-- Chrome 风格独立下载气泡浮窗 -->
+  <div class="dl-popover" id="downloadPopover">
+    <div class="dl-pop-head">
+      <span>最近下载内容</span>
+      <button class="side-close" id="dlPopCloseBtn" title="关闭">×</button>
+    </div>
+    <div class="dl-pop-body" id="downloadPopoverBody"></div>
+  </div>
+
+  <!-- 二级设置弹窗 -->
+  <div class="modal-mask" id="settingsModal">
+    <div class="modal-card" style="width:min(520px,95vw);">
+      <div class="modal-head">
+        <span>设置</span>
+        <button class="side-close" id="settingsCloseBtn" title="关闭">×</button>
+      </div>
+      <div class="modal-body" style="gap:14px;">
+        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:13px;font-weight:600;">外观与搜索</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <span style="font-size:12.5px;color:var(--text-muted);">默认搜索引擎</span>
+            <select id="menuSearchEngine" style="font-size:12.5px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);">
+              <option value="bing">必应 Bing</option>
+              <option value="baidu">百度</option>
+              <option value="google">Google</option>
+              <option value="duckduckgo">DuckDuckGo</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <span style="font-size:12.5px;color:var(--text-muted);">界面主题</span>
+            <select id="settingsThemeSelect" style="font-size:12.5px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);">
+              <option value="system">跟随系统</option>
+              <option value="light">浅色模式</option>
+              <option value="dark">深色模式</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:13px;font-weight:600;">安全与访问控制</div>
+          <div class="https-row">
+            <input id="authPassInput" type="password" placeholder="设置访问密码（留空保存即关闭保护）" autocomplete="new-password" spellcheck="false" style="flex:1;height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);font-size:12.5px;">
+            <button type="button" class="btn" id="saveAuthPassBtn">保存</button>
+          </div>
+          <div class="https-note" id="authPassStatus" style="font-size:11.5px;color:var(--text-muted);">公网暴露时建议设置访问密码。</div>
+        </div>
+
+        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:13px;font-weight:600;">下载与存储</div>
+          <div class="dl-dir-row">
+            <span>默认目录</span>
+            <span class="dl-dir-path" id="settingsDownloadDir" title="">加载中…</span>
+            <button class="btn" id="settingsPickDirBtn" type="button">更改目录</button>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;" id="menuHttps">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:13px;font-weight:600;">HTTPS 与满血内核 (Scramjet)</span>
+            <button class="btn" id="settingsDiagBtn" type="button">连接自检</button>
+          </div>
+          <div id="httpsDesc" style="font-size:12px;color:var(--text-muted);line-height:1.5;">通过 HTTPS 地址打开极光浏览器可激活 Scramjet 内核（站点与视频兼容性最佳）。若使用自带证书，先在本设备安装并信任根证书；若已配置外部证书（或反向代理），可直接打开 HTTPS 地址：</div>
+          <div class="https-links" style="display:flex;flex-direction:column;gap:4px;font-size:12px;">
+            <a id="httpsUrlLink" href="#" target="_blank" rel="noopener">HTTPS 地址检测中…</a>
+            <div id="httpsCaExtras" style="display:flex;flex-direction:column;gap:4px;">
+              <a href="/aurora-ca.mobileconfig">下载根证书（iPhone / iPad）</a>
+              <a href="/aurora-ca.crt">下载根证书（Windows / Android）</a>
+              <div class="https-row" style="margin-top:4px;display:flex;gap:6px;">
+                <input id="certNamesInput" type="text" placeholder="额外域名，如 nas.example.com" autocomplete="off" spellcheck="false" style="flex:1;height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);font-size:12px;">
+                <button type="button" class="btn" id="saveCertNamesBtn">保存</button>
+              </div>
+              <div class="https-note" style="font-size:11.5px;color:var(--text-muted);">额外域名会一并写入服务器证书，保存后重启极光浏览器应用生效。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot" style="justify-content:flex-end;">
+        <button class="btn" id="settingsOkBtn" type="button" style="background:var(--accent);color:#fff;border-color:var(--accent);">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 访问密码解锁弹窗 -->
+  <div class="modal-mask" id="authLockModal" style="z-index:300;backdrop-filter:blur(8px);">
+    <div class="modal-card" style="width:min(380px,92vw);">
+      <div class="modal-head">
+        <span>极光浏览器已启用访问保护</span>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:12.5px;color:var(--text-muted);">请输入访问密码以继续使用代理、书签与下载管理。</div>
+        <input type="password" id="authLockInput" placeholder="输入访问密码..." autocomplete="current-password" style="height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);font-size:13px;outline:none;" />
+        <div class="fs-err" id="authLockErr"></div>
+      </div>
+      <div class="modal-foot" style="justify-content:flex-end;">
+        <button class="btn" id="authLockSubmitBtn" type="button" style="background:var(--accent);color:#fff;border-color:var(--accent);padding:6px 18px;">解锁</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 连接自检弹窗 -->
+  <div class="modal-mask" id="diagModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <span>连接与内核自检</span>
+        <button class="side-close" id="diagCloseBtn" title="关闭">×</button>
+      </div>
+      <div class="modal-body" id="diagBody"></div>
+      <div class="modal-foot">
+        <span class="fs-err" id="diagHint" style="color:var(--text-muted);"></span>
+        <button class="btn" id="diagRetryBtn" type="button">重新检测</button>
+        <button class="btn" id="diagOkBtn" type="button" style="background:var(--accent);color:#fff;border-color:var(--accent);">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 飞牛存储目录选择器 -->
+  <div class="modal-mask" id="folderModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <span>选择 NAS 下载存储目录</span>
+        <button class="side-close" id="folderModalClose" title="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="fs-roots" id="fsRoots"></div>
+        <div class="fs-pathbar">
+          <button class="btn" id="fsUpBtn" type="button">上级</button>
+          <input type="text" id="fsPathInput" placeholder="输入或粘贴 NAS 目录路径..." autocomplete="off" spellcheck="false" />
+          <button class="btn" id="fsGoBtn" type="button">前往</button>
+          <button class="btn" id="fsMkdirBtn" type="button">+ 新建</button>
+        </div>
+        <div class="fs-list" id="fsList"></div>
+      </div>
+      <div class="modal-foot">
+        <span class="fs-err" id="fsErr"></span>
+        <button class="btn" id="fsCancelBtn" type="button">取消</button>
+        <button class="btn" id="fsConfirmBtn" type="button" style="background:var(--accent);color:#fff;border-color:var(--accent);">选择此目录</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 添加书签弹窗 -->
+<div class="modal-backdrop" id="bookmarkModal">
+  <div class="modal-card">
+    <h3>添加快捷书签</h3>
+    <div class="form-group">
+      <label>网站名称</label>
+      <input type="text" id="bmTitleInput" placeholder="例如：路由器后台" />
+    </div>
+    <div class="form-group">
+      <label>网址 (URL)</label>
+      <input type="text" id="bmUrlInput" placeholder="http://192.168.1.1" />
+    </div>
+    <div class="form-group">
+      <label>分组</label>
+      <select id="bmCatInput">
+        <option value="内网设备">内网设备</option>
+        <option value="常用网站">常用网站</option>
+        <option value="飞牛生态">飞牛生态</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="closeBmModal">取消</button>
+      <button class="btn btn-primary" id="saveBmBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// Optional shared secret: supply it once via ?_aurora_token=..., strip it
+// from the address bar immediately, and exchange for an HttpOnly session cookie.
+(function cacheAuroraToken() {
+  try {
+    const url = new URL(location.href);
+    const fromUrl = url.searchParams.get('_aurora_token');
+    if (fromUrl) {
+      sessionStorage.setItem('auroraToken', fromUrl);
+      url.searchParams.delete('_aurora_token');
+      history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+    }
+    const token = sessionStorage.getItem('auroraToken');
+    if (token) {
+      fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'X-Aurora-Token': token }
+      }).catch(() => {});
+    }
+  } catch (e) {}
+})();
+
+function authHeaders(extra = {}) {
+  const token = sessionStorage.getItem('auroraToken');
+  return token ? { ...extra, 'X-Aurora-Token': token } : extra;
+}
+
+function withToken(raw) {
+  const token = sessionStorage.getItem('auroraToken');
+  if (!token) return raw;
+  try {
+    const url = new URL(raw, location.href);
+    url.searchParams.set('_aurora_token', token);
+    return url.toString();
+  } catch (e) {
+    return raw;
+  }
+}
+
+const SEARCH_ENGINES = {
+  bing: { name: '必应', url: 'https://cn.bing.com/search?q=' },
+  baidu: { name: '百度', url: 'https://www.baidu.com/s?wd=' },
+  google: { name: 'Google', url: 'https://www.google.com/search?q=' },
+  duckduckgo: { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' }
+};
+
+const state = {
+  tabs: [],
+  activeTabId: null,
+  bookmarks: [],
+  historyCache: [],
+  settings: { searchEngine: 'bing', theme: 'system' },
+  engineMode: 'lite',
+  ui: { showBookmarksBar: true, sidebarOpen: false, sidebarPanel: 'history' },
+  sj: { ready: false, controller: null, bootPromise: null },
+  https: { enabled: false, port: 18921, mode: 'ca' }
+};
+
+// Base64URL 编码/解码（用于内置轻量代理）
+function toBase64Url(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function fromBase64Url(b64) {
+  const pad = b64.length % 4 ? '='.repeat(4 - (b64.length % 4)) : '';
+  const binary = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + pad);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+// 智能识别用户输入是网址还是搜索词
+function resolveUserInput(raw) {
+  const text = raw.trim();
+  if (!text) return 'fn://newtab';
+  if (text === 'fn://newtab') return text;
+
+  if (/^https?:\/\//i.test(text)) return text;
+
+  // 内网 IP 或带端口地址（如 192.168.1.1、10.0.0.1:8080、localhost:3000）
+  if (/^(localhost|(\d{1,3}\.){3}\d{1,3})(:\d+)?(\/.*)?$/i.test(text)) {
+    return `http://${text}`;
+  }
+
+  // 常见域名形式（无空格且含点号）
+  if (!/\s/.test(text) && /^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+(:\d+)?(\/.*)?$/.test(text)) {
+    return `https://${text}`;
+  }
+
+  const engine = SEARCH_ENGINES[state.settings.searchEngine] || SEARCH_ENGINES.bing;
+  return engine.url + encodeURIComponent(text);
+}
+
+// 构造轻量代理访问地址（内网设备与 Scramjet 不可用时的回退路径）
+async function buildProxySrc(targetUrl) {
+  return withToken(`/lite-proxy/${toBase64Url(targetUrl)}`);
+}
+
+// 站点图标地址：经轻量代理同源取回（外壳页带 COEP 头，直连外站图标会被拦截），
+// 加载失败时界面自动回退为字母块。
+function faviconUrlFor(targetUrl) {
+  try {
+    const u = new URL(targetUrl);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    return withToken(`/lite-proxy/${toBase64Url(u.origin + '/favicon.ico')}`);
+  } catch {
+    return null;
+  }
+}
+
+// 判断是否为内网地址（内网设备始终走轻量直连，Scramjet 的 Wisp 服务端默认也拒绝私网目标）
+function isIntranetUrl(targetUrl) {
+  try {
+    const host = new URL(targetUrl).hostname.toLowerCase();
+    if (host === 'localhost' || host === '::1' || host.endsWith('.local')) return true;
+    const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (m) {
+      const a = parseInt(m[1], 10);
+      const b = parseInt(m[2], 10);
+      if (a === 10 || a === 127) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 169 && b === 254) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function canUseScramjet(targetUrl) {
+  if (!state.sj.ready || !state.sj.controller) return false;
+  // http:// 内网设备（如 192.168.1.1 路由器/爱快）走 Scramjet 满血内核以支持 JS/Cookie；
+  // https:// 自签证书内网设备（如 PVE）继续走轻量直连跳过证书校验
+  return !isIntranetUrl(targetUrl) || /^http:\/\//i.test(targetUrl);
+}
+
+// ---------------------------------------------------------------------------
+// 内核角标：优先反映当前标签页实际使用的内核；新标签页等无内核归属时，
+// 反映下一次外网导航将使用的默认内核。
+// ---------------------------------------------------------------------------
+function kernelLabelForActiveTab() {
+  const tab = getActiveTab();
+  if (tab && tab.kernel === 'scramjet') return 'Scramjet 内核';
+  if (tab && tab.kernel === 'lite') return '轻量直连内核';
+  if (state.sj.ready) return 'Scramjet 内核';
+  if (state.engineMode === 'scramjet') return 'Scramjet 内核启动中…';
+  return '轻量直连内核';
+}
+
+function updateEngineBadge() {
+  const badge = document.getElementById('engineBadge');
+  if (badge) badge.textContent = kernelLabelForActiveTab();
+  updateMenuEngineInfo();
+}
+
+function loadScriptTag(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('脚本加载失败: ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+// 启动 Scramjet 内核：注册服务工作线程 → 加载内核脚本 → 建立 Epoxy/Wisp 传输 → 创建 Controller
+// 任何一步失败都只记录日志并保持 lite 回退，绝不阻断浏览器外壳本身。
+async function bootScramjet() {
+  if (state.sj.bootPromise) return state.sj.bootPromise;
+  state.sj.bootPromise = (async () => {
+    if (!('serviceWorker' in navigator)) {
+      throw new Error('当前浏览器不支持 Service Worker');
+    }
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+      updateViaCache: 'none'
+    });
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) {
+      await new Promise((resolve) => {
+        const t = setTimeout(resolve, 4000);
+        navigator.serviceWorker.addEventListener(
+          'controllerchange',
+          () => {
+            clearTimeout(t);
+            resolve();
+          },
+          { once: true }
+        );
+      });
+    }
+    const serviceworker = navigator.serviceWorker.controller || registration.active;
+    if (!serviceworker) throw new Error('Service Worker 未能激活');
+
+    await loadScriptTag('/scramjet/scramjet.js');
+    await loadScriptTag('/controller/controller.api.js');
+    await loadScriptTag('/utils/scramjet-utils.js');
+
+    const { default: EpoxyTransport } = await import('/epoxy/index.mjs');
+    const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wispUrl = withToken(`${scheme}//${location.host}/wisp/`);
+    const transport = new EpoxyTransport({ wisp: wispUrl });
+
+    const controller = new $scramjetController.Controller({
+      serviceworker,
+      transport,
+      config: {
+        scramjetPath: '/scramjet/scramjet.js',
+        wasmPath: '/scramjet/scramjet.wasm',
+        injectPath: '/controller/controller.inject.js'
+      }
+    });
+    await controller.wait();
+
+    state.sj.controller = controller;
+    state.sj.ready = true;
+
+    // 周期性唤醒服务工作线程，避免其被浏览器回收后首个导航丢失路由
+    setInterval(() => {
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage('keepalive');
+      }
+    }, 15000);
+
+    updateEngineBadge();
+    console.log('[fn-browser] Scramjet 内核已就绪');
+  })().catch((err) => {
+    state.sj.ready = false;
+    state.sj.controller = null;
+    updateEngineBadge();
+    console.warn('[fn-browser] Scramjet 启动失败，外网页面回退轻量直连内核:', err);
+  });
+  return state.sj.bootPromise;
+}
+
+// Scramjet 帧内发生导航（点击链接、重定向等）时同步地址栏与标签状态
+function onScramjetUrlChange(tabId, url) {
+  const tab = state.tabs.find((t) => t.id === tabId);
+  if (!tab || !url || !/^https?:\/\//i.test(url)) return;
+  const isProgrammatic = tab.sjExpectUrl === url;
+  tab.sjExpectUrl = null;
+  if (tab.url === url) return;
+
+  // In-page clicks must become real history entries, otherwise back/forward
+  // jumps to the last manually typed URL instead of the previous page.
+  if (!isProgrammatic) {
+    tab.history = tab.history.slice(0, tab.historyIndex + 1);
+    tab.history.push(url);
+    tab.historyIndex = tab.history.length - 1;
+  }
+  tab.url = url;
+  try {
+    tab.title = new URL(url).hostname;
+  } catch {}
+  renderTabStrip();
+  if (tabId === state.activeTabId) syncToolbarWithActiveTab();
+  if (!isProgrammatic) {
+    fetch('/api/history', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ title: tab.title, url })
+    }).catch(() => {});
+  }
+}
+
+// 通过 Scramjet 帧导航（每个标签页复用同一个帧元素与 Frame 对象）
+function navigateWithScramjet(tab, pane, targetUrl) {
+  tab.kernel = 'scramjet';
+  if (!tab.sjFrame) {
+    pane.innerHTML = `<iframe class="proxy-frame" id="frame-${tab.id}"></iframe>`;
+    const frameEl = document.getElementById(`frame-${tab.id}`);
+    const plugins = [];
+    try {
+      plugins.push(new $scramjetUtils.UrlWatcherPlugin((url) => onScramjetUrlChange(tab.id, url)));
+    } catch (e) {
+      console.warn('[fn-browser] UrlWatcherPlugin 初始化失败:', e);
+    }
+    tab.sjFrame = state.sj.controller.createFrame(frameEl, { plugins });
+    frameEl.addEventListener('load', () => {
+      showLoading(false);
+      installFramePopupGuards(frameEl);
+    });
+    applyZoom(tab);
+  }
+  tab.sjExpectUrl = targetUrl;
+  tab.sjFrame.go(targetUrl);
+  setTimeout(() => showLoading(false), 1500);
+}
+
+// ---------------------------------------------------------------------------
+// 弹窗拦截：拦截 iframe 内的 target="_blank"、中键/Ctrl 点击与 window.open，
+// 防止视频网站或外链额外弹出独立浏览器窗口，统一改为在极光浏览器内开新标签页。
+// ---------------------------------------------------------------------------
+let lastPopupOpenUrl = '';
+let lastPopupOpenAt = 0;
+
+function decodeProxyTargetUrl(rawUrl, frameWin) {
+  if (!rawUrl) return null;
+  let baseHref = location.origin;
+  try {
+    const loc = frameWin && frameWin.location && frameWin.location.href;
+    if (loc) {
+      if (loc.startsWith(location.origin + '/lite-proxy/')) {
+        const b64 = loc.slice((location.origin + '/lite-proxy/').length).split('?')[0];
+        baseHref = fromBase64Url(b64);
+      } else if (loc.startsWith(location.origin + '/scramjet/')) {
+        const decoded = decodeURIComponent(loc.slice((location.origin + '/scramjet/').length));
+        if (/^https?:\/\//i.test(decoded)) baseHref = decoded;
+      } else if (/^https?:\/\//i.test(loc)) {
+        baseHref = loc;
+      }
+    }
+  } catch {}
+  let resolved;
+  try {
+    resolved = new URL(String(rawUrl), baseHref).href;
+  } catch {
+    return null;
+  }
+  if (resolved.startsWith(location.origin + '/lite-proxy/')) {
+    try {
+      const b64 = resolved.slice((location.origin + '/lite-proxy/').length).split('?')[0];
+      return fromBase64Url(b64);
+    } catch {}
+  }
+  if (resolved.startsWith(location.origin + '/scramjet/')) {
+    try {
+      const rest = resolved.slice((location.origin + '/scramjet/').length);
+      const decoded = decodeURIComponent(rest);
+      if (/^https?:\/\//i.test(decoded)) return decoded;
+    } catch {}
+  }
+  return /^https?:\/\//i.test(resolved) ? resolved : null;
+}
+
+function openTabFromFramePopup(rawUrl, frameWin) {
+  const target = decodeProxyTargetUrl(rawUrl, frameWin);
+  if (!target) return;
+  const now = Date.now();
+  if (target === lastPopupOpenUrl && now - lastPopupOpenAt < 800) return;
+  lastPopupOpenUrl = target;
+  lastPopupOpenAt = now;
+  createTab(target);
+}
+
+function installFramePopupGuards(frame) {
+  let win = null;
+  let doc = null;
+  try {
+    win = frame.contentWindow;
+    doc = frame.contentDocument;
+  } catch {}
+  if (!win || !doc) return;
+
+  try {
+    if (!win.__auroraOpenWrapped) {
+      win.__auroraOpenWrapped = true;
+      const nativeOpen = win.open;
+      win.open = function (url) {
+        if (url != null && String(url) !== '') {
+          openTabFromFramePopup(String(url), win);
+          return { closed: false, focus() {}, close() {}, blur() {}, location: {} };
+        }
+        return nativeOpen ? nativeOpen.apply(win, arguments) : null;
+      };
+    }
+  } catch {}
+
+  try {
+    if (!doc.__auroraClickGuard) {
+      doc.__auroraClickGuard = true;
+      doc.addEventListener(
+        'click',
+        (e) => {
+          const t = e.target;
+          const a = t && t.closest ? t.closest('a[href], area[href]') : null;
+          if (!a) return;
+          const raw = a.getAttribute('href') || '';
+          if (/^(javascript:|data:|blob:|mailto:|tel:|#)/i.test(raw)) return;
+          if (a.hasAttribute('download')) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            const target = decodeProxyTargetUrl(a.href || raw, win);
+            if (target) startNasDownload(target, a.getAttribute('download') || '', true);
+            return;
+          }
+          const targetAttr = (a.getAttribute('target') || '').toLowerCase();
+          if (targetAttr === '_blank' || e.button === 1 || e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            openTabFromFramePopup(a.href || raw, win);
+          }
+        },
+        true
+      );
+    }
+  } catch {}
+}
+
+// 通过内置轻量直连代理导航（内网设备与双内核都不可用时的回退路径）
+async function navigateWithLite(tab, pane, targetUrl) {
+  tab.sjFrame = null;
+  tab.kernel = 'lite';
+  const proxySrc = await buildProxySrc(targetUrl);
+  pane.innerHTML = `<iframe class="proxy-frame" id="frame-${tab.id}" name="aurora-${tab.id}" src="${proxySrc}"></iframe>`;
+  applyZoom(tab);
+  const frame = document.getElementById(`frame-${tab.id}`);
+  frame.addEventListener('load', () => {
+    showLoading(false);
+    installFramePopupGuards(frame);
+    try {
+      const frameTitle = frame.contentDocument && frame.contentDocument.title;
+      if (frameTitle) {
+        tab.title = frameTitle;
+        renderTabStrip();
+      }
+    } catch {}
+  });
+}
+
+// 主题应用
+function applyTheme(theme) {
+  let effective = theme;
+  if (theme === 'system') {
+    effective = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', effective);
+  const sun = document.getElementById('themeIconSun');
+  const moon = document.getElementById('themeIconMoon');
+  if (sun && moon) {
+    sun.style.display = effective === 'dark' ? 'block' : 'none';
+    moon.style.display = effective === 'dark' ? 'none' : 'block';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 页面缩放（作用于标签页内容元素，桌面浏览器同款 Ctrl+滚轮 / 菜单缩放）
+// ---------------------------------------------------------------------------
+const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+
+function applyZoom(tab) {
+  const pane = document.getElementById(`pane-${tab.id}`);
+  if (!pane) return;
+  const target = pane.querySelector('.proxy-frame, .newtab-page');
+  if (!target) return;
+  const z = tab.zoom || 1;
+  if (z === 1) {
+    target.style.transform = '';
+    target.style.transformOrigin = '';
+    target.style.width = '';
+    target.style.height = '';
+  } else {
+    target.style.transform = `scale(${z})`;
+    target.style.transformOrigin = '0 0';
+    target.style.width = `${100 / z}%`;
+    target.style.height = `${100 / z}%`;
+  }
+}
+
+function setZoom(tab, z) {
+  if (!tab) return;
+  tab.zoom = Math.min(3, Math.max(0.25, Math.round(z * 100) / 100));
+  applyZoom(tab);
+  syncZoomIndicators();
+}
+
+function stepZoom(tab, dir) {
+  if (!tab) return;
+  const cur = tab.zoom || 1;
+  let next;
+  if (dir > 0) {
+    next = ZOOM_STEPS.find((s) => s > cur + 0.001) ?? 3;
+  } else {
+    next = [...ZOOM_STEPS].reverse().find((s) => s < cur - 0.001) ?? 0.25;
+  }
+  setZoom(tab, next);
+}
+
+function syncZoomIndicators() {
+  const tab = getActiveTab();
+  const pct = `${Math.round(((tab && tab.zoom) || 1) * 100)}%`;
+  const sz = document.getElementById('statusZoom');
+  if (sz) sz.textContent = pct;
+  const mz = document.getElementById('menuZoomLabel');
+  if (mz) mz.textContent = pct;
+}
+
+// 标签页管理
+function createTab(initialUrl = 'fn://newtab') {
+  const id = 'tab-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+  const tab = {
+    id,
+    title: '新标签页',
+    url: initialUrl,
+    history: [initialUrl],
+    historyIndex: 0,
+    zoom: 1,
+    kernel: null
+  };
+  state.tabs.push(tab);
+
+  // 创建 DOM 面板
+  const pane = document.createElement('div');
+  pane.className = 'tab-pane';
+  pane.id = `pane-${id}`;
+  document.getElementById('viewportContainer').appendChild(pane);
+
+  switchTab(id);
+  navigateTab(id, initialUrl, true);
+  return id;
+}
+
+const closedTabUrls = [];
+
+function reopenLastClosedTab() {
+  const url = closedTabUrls.pop();
+  if (url) createTab(url);
+}
+
+function closeTab(id, e) {
+  if (e) e.stopPropagation();
+  const idx = state.tabs.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+
+  const closing = state.tabs[idx];
+  if (closing.url && closing.url !== 'fn://newtab') {
+    closedTabUrls.push(closing.url);
+    if (closedTabUrls.length > 20) closedTabUrls.shift();
+  }
+  state.tabs.splice(idx, 1);
+  const pane = document.getElementById(`pane-${id}`);
+  if (pane) pane.remove();
+
+  if (state.tabs.length === 0) {
+    createTab('fn://newtab');
+    return;
+  }
+  if (state.activeTabId === id) {
+    const nextTab = state.tabs[Math.min(idx, state.tabs.length - 1)];
+    switchTab(nextTab.id);
+  } else {
+    renderTabStrip();
+  }
+}
+
+function switchTab(id) {
+  state.activeTabId = id;
+  document.querySelectorAll('.tab-pane').forEach((el) => {
+    el.classList.toggle('active', el.id === `pane-${id}`);
+  });
+  const tab = getActiveTab();
+  if (tab) applyZoom(tab);
+  renderTabStrip();
+  syncToolbarWithActiveTab();
+  syncZoomIndicators();
+  resetFindState();
+  updateEngineBadge();
+}
+
+function getActiveTab() {
+  return state.tabs.find((t) => t.id === state.activeTabId);
+}
+
+async function navigateTab(id, rawInput, skipHistoryPush = false) {
+  const tab = state.tabs.find((t) => t.id === id);
+  if (!tab) return;
+
+  const targetUrl = resolveUserInput(rawInput);
+  tab.url = targetUrl;
+
+  if (!skipHistoryPush) {
+    tab.history = tab.history.slice(0, tab.historyIndex + 1);
+    tab.history.push(targetUrl);
+    tab.historyIndex = tab.history.length - 1;
+  }
+
+  const pane = document.getElementById(`pane-${id}`);
+  if (!pane) return;
+
+  if (targetUrl === 'fn://newtab') {
+    tab.title = '新标签页';
+    tab.kernel = null;
+    renderNewTabPage(pane, id);
+    applyZoom(tab);
+    renderTabStrip();
+    syncToolbarWithActiveTab();
+    updateEngineBadge();
+    return;
+  }
+
+  try {
+    tab.title = new URL(targetUrl).hostname;
+  } catch {
+    tab.title = targetUrl;
+  }
+
+  renderTabStrip();
+  syncToolbarWithActiveTab();
+  showLoading(true);
+
+  if (window.isSecureContext && state.engineMode === 'scramjet' && !state.sj.ready) {
+    await Promise.race([
+      bootScramjet(),
+      new Promise((r) => setTimeout(r, 4500))
+    ]);
+  }
+
+  if (canUseScramjet(targetUrl)) {
+    // 外网页面走 Scramjet 内核（安全上下文且内核已就绪）
+    navigateWithScramjet(tab, pane, targetUrl);
+  } else {
+    // 内网设备 / Scramjet 不可用：走内置轻量直连代理
+    await navigateWithLite(tab, pane, targetUrl);
+  }
+  updateEngineBadge();
+
+  // 记录历史
+  fetch('/api/history', {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ title: tab.title, url: targetUrl })
+  }).catch(() => {});
+}
+
+function showLoading(active) {
+  const bar = document.getElementById('loadingBar');
+  const statusText = document.getElementById('statusText');
+  const tab = getActiveTab();
+  if (tab) {
+    const nextLoading = Boolean(active) && tab.url !== 'fn://newtab';
+    if (tab.loading !== nextLoading) {
+      tab.loading = nextLoading;
+      renderTabStrip();
+    }
+  }
+  if (active) {
+    bar.classList.add('active');
+    if (statusText && tab && tab.url !== 'fn://newtab') {
+      statusText.textContent = `正在加载 ${tab.url} …`;
+    }
+  } else {
+    bar.style.width = '100%';
+    setTimeout(() => {
+      bar.classList.remove('active');
+      bar.style.width = '0%';
+    }, 220);
+    if (statusText && tab) {
+      statusText.textContent = tab.url === 'fn://newtab' ? '' : tab.url;
+    }
+  }
+}
+
+// 标签页图标：加载中显示旋转圆环，否则显示站点 favicon，失败回退彩色字母块
+function tabFavHtml(tab) {
+  if (tab.loading) {
+    return '<span class="tab-spinner"></span>';
+  }
+  if (tab.url === 'fn://newtab') {
+    return '<span class="tab-dot"></span>';
+  }
+  const fav = faviconUrlFor(tab.url);
+  const letter = escapeHtml((tab.title || '?').slice(0, 1).toUpperCase());
+  const color = colorForHost(tab.url);
+  if (!fav) {
+    return `<span class="tab-fav-letter" style="background:${color}">${letter}</span>`;
+  }
+  return `<img src="${escapeHtml(fav)}" alt="" onerror="this.outerHTML='<span class=\\'tab-fav-letter\\' style=\\'background:${color}\\'>${letter}</span>'" />`;
+}
+
+const HOST_COLORS = ['#165DFF', '#00B42A', '#FF7D00', '#722ED1', '#0FC6C2', '#F53F3F', '#3491FA'];
+function colorForHost(url) {
+  try {
+    const host = new URL(url).hostname;
+    let sum = 0;
+    for (let i = 0; i < host.length; i++) sum += host.charCodeAt(i);
+    return HOST_COLORS[sum % HOST_COLORS.length];
+  } catch {
+    return '#165DFF';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 标签栏渲染（含拖拽排序与中键关闭）
+// ---------------------------------------------------------------------------
+let draggingTabId = null;
+
+function renderTabStrip() {
+  const strip = document.getElementById('tabStrip');
+  const newBtn = document.getElementById('newTabBtn');
+  strip.querySelectorAll('.tab-item').forEach((n) => n.remove());
+
+  state.tabs.forEach((tab) => {
+    const el = document.createElement('div');
+    el.className = `tab-item ${tab.id === state.activeTabId ? 'active' : ''}`;
+    el.draggable = true;
+    el.dataset.tabId = tab.id;
+    el.title = tab.url === 'fn://newtab' ? tab.title : `${tab.title}\n${tab.url}`;
+    el.innerHTML = `
+      <span class="tab-fav">${tabFavHtml(tab)}</span>
+      <span class="tab-title">${escapeHtml(tab.title)}</span>
+      <button class="tab-close" title="关闭 (Ctrl+W)">×</button>
+    `;
+    el.addEventListener('click', () => switchTab(tab.id));
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openTabContextMenu(tab.id, e.clientX, e.clientY);
+    });
+    el.addEventListener('auxclick', (e) => {
+      if (e.button === 1) closeTab(tab.id, e);
+    });
+    el.querySelector('.tab-close').addEventListener('click', (e) => closeTab(tab.id, e));
+
+    el.addEventListener('dragstart', (e) => {
+      draggingTabId = tab.id;
+      el.classList.add('dragging');
+      try {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', tab.id);
+      } catch {}
+    });
+    el.addEventListener('dragend', () => {
+      draggingTabId = null;
+      strip.querySelectorAll('.tab-item').forEach((n) =>
+        n.classList.remove('dragging', 'drop-before', 'drop-after')
+      );
+    });
+    el.addEventListener('dragover', (e) => {
+      if (!draggingTabId || draggingTabId === tab.id) return;
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const after = e.clientX > rect.left + rect.width / 2;
+      el.classList.toggle('drop-after', after);
+      el.classList.toggle('drop-before', !after);
+    });
+    el.addEventListener('dragleave', () => {
+      el.classList.remove('drop-before', 'drop-after');
+    });
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (!draggingTabId || draggingTabId === tab.id) return;
+      const rect = el.getBoundingClientRect();
+      const after = e.clientX > rect.left + rect.width / 2;
+      reorderTab(draggingTabId, tab.id, after);
+    });
+
+    strip.insertBefore(el, newBtn);
+  });
+}
+
+function reorderTab(dragId, targetId, after) {
+  const from = state.tabs.findIndex((t) => t.id === dragId);
+  if (from === -1) return;
+  const [moved] = state.tabs.splice(from, 1);
+  let to = state.tabs.findIndex((t) => t.id === targetId);
+  if (to === -1) {
+    state.tabs.push(moved);
+  } else {
+    if (after) to += 1;
+    state.tabs.splice(to, 0, moved);
+  }
+  draggingTabId = null;
+  renderTabStrip();
+}
+
+function syncToolbarWithActiveTab() {
+  const tab = getActiveTab();
+  if (!tab) return;
+  const input = document.getElementById('urlInput');
+  if (document.activeElement !== input) {
+    input.value = tab.url === 'fn://newtab' ? '' : tab.url;
+  }
+
+  document.getElementById('backBtn').disabled = tab.historyIndex <= 0;
+  document.getElementById('forwardBtn').disabled = tab.historyIndex >= tab.history.length - 1;
+
+  const isStarred = state.bookmarks.some((b) => b.url === tab.url);
+  const starBtn = document.getElementById('starBtn');
+  starBtn.textContent = isStarred ? '★' : '☆';
+  starBtn.classList.toggle('starred', isStarred);
+
+  const lockBtn = document.getElementById('omniboxLockBtn');
+  if (lockBtn) {
+    const isNewTab = tab.url === 'fn://newtab';
+    const secure = !isNewTab && window.isSecureContext && tab.kernel === 'scramjet';
+    const warn = !isNewTab && !window.isSecureContext;
+    lockBtn.classList.toggle('secure', secure);
+    lockBtn.classList.toggle('warn', warn);
+    lockBtn.title = isNewTab
+      ? '新标签页'
+      : secure
+        ? '安全上下文 · Scramjet 满血内核（点击运行连接自检）'
+        : '当前使用轻量直连或非安全上下文（点击运行连接自检）';
+    lockBtn.innerHTML = secure
+      ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
+      : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>';
+  }
+
+  const statusText = document.getElementById('statusText');
+  if (statusText && !document.getElementById('loadingBar').classList.contains('active')) {
+    statusText.textContent = tab.url === 'fn://newtab' ? '' : tab.url;
+  }
+}
+
+function renderBookmarkBar() {
+  const bar = document.getElementById('bookmarkBar');
+  bar.innerHTML = '';
+  bar.classList.toggle('hidden', !state.ui.showBookmarksBar);
+  state.bookmarks.forEach((bm) => {
+    const chip = document.createElement('div');
+    chip.className = 'bm-chip';
+    chip.title = bm.url;
+    chip.innerHTML = `<span class="bm-dot" style="background:${bm.color || '#165DFF'}"></span><span>${escapeHtml(bm.title)}</span>`;
+    chip.onclick = () => {
+      const tab = getActiveTab();
+      if (tab) navigateTab(tab.id, bm.url);
+    };
+    bar.appendChild(chip);
+  });
+  const check = document.getElementById('bmbarCheck');
+  if (check) check.style.visibility = state.ui.showBookmarksBar ? 'visible' : 'hidden';
+}
+
+async function setBookmarksBarVisible(visible) {
+  state.ui.showBookmarksBar = visible;
+  renderBookmarkBar();
+  try {
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ showBookmarksBar: visible })
+    });
+  } catch {}
+}
+
+function renderNewTabPage(pane, tabId) {
+  const now = new Date();
+  const timeStr = now.toTimeString().slice(0, 5);
+  const engineKey = state.settings.searchEngine || 'bing';
+
+  const groups = {};
+  state.bookmarks.forEach((b) => {
+    const cat = b.category || '常用网站';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(b);
+  });
+
+  let sectionsHtml = '';
+  Object.keys(groups).forEach((cat) => {
+    const cards = groups[cat]
+      .map((b) => {
+        const fav = faviconUrlFor(b.url);
+        const avatarInner = fav
+          ? `<img src="${escapeHtml(fav)}" alt="" onerror="this.parentElement.textContent='${escapeHtml(b.title.slice(0, 1))}'" />`
+          : escapeHtml(b.title.slice(0, 1));
+        return `
+      <div class="site-card" data-url="${escapeHtml(b.url)}">
+        <div class="site-avatar" style="background:${b.color || '#165DFF'}">${avatarInner}</div>
+        <div class="site-meta">
+          <div class="site-name">${escapeHtml(b.title)}</div>
+          <div class="site-url">${escapeHtml(b.url)}</div>
+        </div>
+        <button class="site-del" data-id="${escapeHtml(b.id)}" title="删除">×</button>
+      </div>`;
+      })
+      .join('');
+
+    sectionsHtml += `
+      <div class="section-box">
+        <div class="section-title">
+          <span>${escapeHtml(cat)}</span>
+          <span class="add-bm-link" data-add-bm="1">+ 添加快捷方式</span>
+        </div>
+        <div class="cards-grid">${cards}</div>
+      </div>`;
+  });
+
+  if (Object.keys(groups).length === 0) {
+    sectionsHtml = `
+      <div class="section-box">
+        <div class="section-title">
+          <span>快捷导航</span>
+          <span class="add-bm-link" data-add-bm="1">+ 添加快捷方式</span>
+        </div>
+      </div>`;
+  }
+
+  pane.innerHTML = `
+    <div class="newtab-page">
+      <div class="hero-header">
+        <div class="hero-clock">${timeStr}</div>
+        <div class="hero-sub">飞牛纯原生浏览器 · 安全访问内网设备与互联网</div>
+      </div>
+      <div class="hero-search">
+        <select id="heroEngine-${tabId}">
+          <option value="bing" ${engineKey === 'bing' ? 'selected' : ''}>必应</option>
+          <option value="baidu" ${engineKey === 'baidu' ? 'selected' : ''}>百度</option>
+          <option value="google" ${engineKey === 'google' ? 'selected' : ''}>Google</option>
+          <option value="duckduckgo" ${engineKey === 'duckduckgo' ? 'selected' : ''}>DuckDuckGo</option>
+        </select>
+        <input type="text" id="heroInput-${tabId}" placeholder="输入搜索关键词或内网 IP / 网址..." />
+        <button id="heroGo-${tabId}">前往</button>
+      </div>
+      ${sectionsHtml}
+    </div>
+  `;
+
+  const heroInput = document.getElementById(`heroInput-${tabId}`);
+  const heroGo = document.getElementById(`heroGo-${tabId}`);
+  const heroEngine = document.getElementById(`heroEngine-${tabId}`);
+
+  heroEngine.onchange = async (e) => {
+    state.settings.searchEngine = e.target.value;
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ searchEngine: e.target.value })
+    });
+  };
+
+  const triggerSearch = () => {
+    if (heroInput.value.trim()) navigateTab(tabId, heroInput.value);
+  };
+  heroGo.onclick = triggerSearch;
+  heroInput.onkeydown = (e) => {
+    if (e.key === 'Enter') triggerSearch();
+  };
+
+  pane.querySelectorAll('.site-card').forEach((card) => {
+    card.onclick = () => navigateTab(tabId, card.getAttribute('data-url'));
+  });
+
+  pane.querySelectorAll('.site-del').forEach((btn) => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const bmId = btn.getAttribute('data-id');
+      await fetch(`/api/bookmarks/${encodeURIComponent(bmId)}`, { method: 'DELETE', headers: authHeaders() });
+      await loadBookmarks();
+      renderNewTabPage(pane, tabId);
+    };
+  });
+
+  pane.querySelectorAll('[data-add-bm]').forEach((el) => {
+    el.onclick = () => openBookmarkModal();
+  });
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ---------------------------------------------------------------------------
+// 书签与历史交互
+// ---------------------------------------------------------------------------
+async function loadBookmarks() {
+  const resp = await fetch('/api/bookmarks', { headers: authHeaders() });
+  state.bookmarks = await resp.json();
+  renderBookmarkBar();
+  syncToolbarWithActiveTab();
+  if (state.ui.sidebarOpen && state.ui.sidebarPanel === 'bookmarks') {
+    renderSidebarPanel();
+  }
+}
+
+async function refreshHistoryCache() {
+  try {
+    const resp = await fetch('/api/history', { headers: authHeaders() });
+    state.historyCache = await resp.json();
+  } catch {}
+  return state.historyCache;
+}
+
+function openBookmarkModal(prefillTitle = '', prefillUrl = '') {
+  document.getElementById('bmTitleInput').value = prefillTitle;
+  document.getElementById('bmUrlInput').value = prefillUrl;
+  document.getElementById('bookmarkModal').classList.add('open');
+}
+
+document.getElementById('closeBmModal').onclick = () => {
+  document.getElementById('bookmarkModal').classList.remove('open');
+};
+
+document.getElementById('saveBmBtn').onclick = async () => {
+  const title = document.getElementById('bmTitleInput').value.trim();
+  const rawUrl = document.getElementById('bmUrlInput').value.trim();
+  const category = document.getElementById('bmCatInput').value;
+  if (!rawUrl) return;
+  const url = resolveUserInput(rawUrl);
+
+  const colors = ['#165DFF', '#00B42A', '#FF7D00', '#722ED1', '#0FC6C2', '#F53F3F'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+
+  await fetch('/api/bookmarks', {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ title: title || url, url, category, color })
+  });
+  document.getElementById('bookmarkModal').classList.remove('open');
+  await loadBookmarks();
+  const tab = getActiveTab();
+  if (tab && tab.url === 'fn://newtab') {
+    renderNewTabPage(document.getElementById(`pane-${tab.id}`), tab.id);
+  }
+};
+
+document.getElementById('starBtn').onclick = async () => {
+  const tab = getActiveTab();
+  if (!tab || tab.url === 'fn://newtab') return;
+  const existing = state.bookmarks.find((b) => b.url === tab.url);
+  if (existing) {
+    await fetch(`/api/bookmarks/${encodeURIComponent(existing.id)}`, { method: 'DELETE', headers: authHeaders() });
+    await loadBookmarks();
+  } else {
+    openBookmarkModal(tab.title, tab.url);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// 侧边栏（历史 / 书签 / 下载）
+// ---------------------------------------------------------------------------
+function openSidebar(panel = 'history') {
+  state.ui.sidebarOpen = true;
+  state.ui.sidebarPanel = panel;
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarBtn').classList.add('on');
+  renderSidebarPanel();
+}
+
+function closeSidebar() {
+  state.ui.sidebarOpen = false;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBtn').classList.remove('on');
+}
+
+function toggleSidebar(panel = 'history') {
+  if (state.ui.sidebarOpen && state.ui.sidebarPanel === panel) {
+    closeSidebar();
+  } else {
+    openSidebar(panel);
+  }
+}
+
+document.querySelectorAll('.side-tab').forEach((btn) => {
+  btn.onclick = () => {
+    state.ui.sidebarPanel = btn.getAttribute('data-panel');
+    renderSidebarPanel();
+  };
+});
+document.getElementById('sideCloseBtn').onclick = () => closeSidebar();
+document.getElementById('downloadsBtn').onclick = (e) => {
+  e.stopPropagation();
+  toggleDownloadPopover();
+};
+document.getElementById('sidebarBtn').onclick = () => toggleSidebar('history');
+
+async function renderSidebarPanel() {
+  const panel = state.ui.sidebarPanel;
+  document.querySelectorAll('.side-tab').forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-panel') === panel);
+  });
+  const body = document.getElementById('sidebarBody');
+  if (!body) return;
+
+  if (panel === 'history') {
+    body.innerHTML = '<div class="side-empty">加载中…</div>';
+    const list = await refreshHistoryCache();
+    if (state.ui.sidebarPanel !== 'history' || !state.ui.sidebarOpen) return;
+    if (!list.length) {
+      body.innerHTML = '<div class="side-empty">暂无浏览记录</div>';
+      return;
+    }
+    body.innerHTML = `
+      <div class="side-actions"><button class="btn" id="sideClearHistory">清空记录</button></div>
+      ${list
+        .map(
+          (h) => `
+        <div class="side-row" data-url="${escapeHtml(h.url)}">
+          <div class="side-main">
+            <div class="side-title">${escapeHtml(h.title)}</div>
+            <div class="side-sub">${escapeHtml(h.url)}</div>
+          </div>
+          <span class="side-time">${escapeHtml(new Date(h.visitedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span>
+        </div>`
+        )
+        .join('')}`;
+    body.querySelectorAll('.side-row').forEach((row) => {
+      row.onclick = () => {
+        const tab = getActiveTab();
+        if (tab) navigateTab(tab.id, row.getAttribute('data-url'));
+        if (window.innerWidth <= 760) closeSidebar();
+      };
+    });
+    const clearBtn = document.getElementById('sideClearHistory');
+    if (clearBtn) {
+      clearBtn.onclick = async () => {
+        await fetch('/api/history', { method: 'DELETE', headers: authHeaders() });
+        state.historyCache = [];
+        renderSidebarPanel();
+      };
+    }
+    return;
+  }
+
+  if (panel === 'bookmarks') {
+    if (!state.bookmarks.length) {
+      body.innerHTML = '<div class="side-empty">暂无书签<br/>打开网页后点击地址栏右侧的 ☆ 即可收藏</div>';
+      return;
+    }
+    body.innerHTML = state.bookmarks
+      .map(
+        (b) => `
+      <div class="side-row" data-url="${escapeHtml(b.url)}">
+        <span class="bm-dot" style="background:${b.color || '#165DFF'}"></span>
+        <div class="side-main">
+          <div class="side-title">${escapeHtml(b.title)}</div>
+          <div class="side-sub">${escapeHtml(b.category || '')} · ${escapeHtml(b.url)}</div>
+        </div>
+        <button class="side-del" data-id="${escapeHtml(b.id)}" title="删除书签">×</button>
+      </div>`
+      )
+      .join('');
+    body.querySelectorAll('.side-row').forEach((row) => {
+      row.onclick = () => {
+        const tab = getActiveTab();
+        if (tab) navigateTab(tab.id, row.getAttribute('data-url'));
+        if (window.innerWidth <= 760) closeSidebar();
+      };
+    });
+    body.querySelectorAll('.side-del').forEach((btn) => {
+      btn.onclick = async (e) => {
+        e.stopPropagation();
+        await fetch(`/api/bookmarks/${encodeURIComponent(btn.getAttribute('data-id'))}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        await loadBookmarks();
+      };
+    });
+    return;
+  }
+
+  // 书签/历史之外不再合并下载
+}
+
+let downloadsPollTimer = null;
+let downloadsCache = { downloadDir: '', items: [] };
+
+function formatBytes(bytes) {
+  const n = Number(bytes) || 0;
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+function fileIconForName(name) {
+  const ext = (String(name || '').split('.').pop() || '').toLowerCase();
+  if (['mp4', 'mkv', 'avi', 'mov', 'webm', 'flv'].includes(ext)) return '🎬';
+  if (['mp3', 'flac', 'wav', 'aac', 'ogg'].includes(ext)) return '🎵';
+  if (['zip', 'rar', '7z', 'tar', 'gz', 'tgz'].includes(ext)) return '🗜';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) return '🖼';
+  if (['exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'apk', 'fpk', 'iso'].includes(ext)) return '📦';
+  return '📄';
+}
+
+function isDownloadPopoverOpen() {
+  const pop = document.getElementById('downloadPopover');
+  return pop && pop.classList.contains('open');
+}
+
+function toggleDownloadPopover(force) {
+  const pop = document.getElementById('downloadPopover');
+  if (!pop) return;
+  const open = typeof force === 'boolean' ? force : !pop.classList.contains('open');
+  pop.classList.toggle('open', open);
+  const btn = document.getElementById('downloadsBtn');
+  if (btn) btn.classList.toggle('on', open);
+  if (open) {
+    toggleMenu(false);
+    renderDownloadPopover();
+  }
+}
+
+function updateDownloadIndicator(items) {
+  const activeCount = (items || []).filter((d) => d.status === 'downloading').length;
+  const active = activeCount > 0;
+  const btn = document.getElementById('downloadsBtn');
+  const badge = document.getElementById('dlBadge');
+  if (btn) btn.classList.toggle('active', active);
+  if (badge) badge.textContent = active ? String(activeCount) : '';
+  if (active && !downloadsPollTimer) {
+    downloadsPollTimer = setInterval(async () => {
+      await fetchDownloadsState();
+      if (isDownloadPopoverOpen()) {
+        const body = document.getElementById('downloadPopoverBody');
+        if (body && (!document.activeElement || !body.contains(document.activeElement) || document.activeElement.tagName !== 'INPUT')) {
+          drawDownloadsBody(body);
+        }
+      }
+    }, 1000);
+  } else if (!active && downloadsPollTimer) {
+    clearInterval(downloadsPollTimer);
+    downloadsPollTimer = null;
+  }
+}
+
+async function fetchDownloadsState() {
+  try {
+    const resp = await fetch('/api/downloads', { headers: authHeaders() });
+    if (resp.ok) {
+      downloadsCache = await resp.json();
+      if (downloadsCache.downloadDir) state.settings.downloadDir = downloadsCache.downloadDir;
+      updateDownloadIndicator(downloadsCache.items);
+    }
+  } catch {}
+}
+
+async function startNasDownload(url, filename = '', openPanel = false) {
+  const targetUrl = String(url || '').trim();
+  if (!targetUrl) return;
+  try {
+    const resp = await fetch('/api/downloads', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ url: targetUrl, filename })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      setStatusText(`下载失败：${data.error || '未知错误'}`);
+      return;
+    }
+    setStatusText(`已开始下载到 NAS：${data.filename}`);
+    await fetchDownloadsState();
+    if (openPanel) {
+      toggleDownloadPopover(true);
+    } else if (isDownloadPopoverOpen()) {
+      drawDownloadsBody(document.getElementById('downloadPopoverBody'));
+    }
+  } catch (err) {
+    setStatusText(`下载请求失败：${err.message}`);
+  }
+}
+
+function drawDownloadsBody(body) {
+  if (!body) return;
+  const dir = downloadsCache.downloadDir || state.settings.downloadDir || '';
+  const items = downloadsCache.items || [];
+  const activeTab = getActiveTab();
+  const canDlCurrent = activeTab && activeTab.url && /^https?:\/\//i.test(activeTab.url);
+  const listHtml = items.length
+    ? items
+        .map((d) => {
+          const pct = d.totalBytes > 0 ? Math.min(100, Math.round((d.receivedBytes * 100) / d.totalBytes)) : 0;
+          const sizeText = d.totalBytes > 0
+            ? `${formatBytes(d.receivedBytes)} / ${formatBytes(d.totalBytes)}`
+            : formatBytes(d.receivedBytes);
+          const statusMap = {
+            downloading: d.speedBps ? `${formatBytes(d.speedBps)}/s` : '下载中…',
+            completed: '✓ 已存到 NAS',
+            failed: `失败：${d.error || '未知错误'}`,
+            cancelled: '已取消'
+          };
+          const statusColor = d.status === 'completed' ? '#00b42a' : (d.status === 'failed' ? '#e5484d' : 'var(--text-muted)');
+          return `
+            <div class="dl-item">
+              <div class="dl-item-head">
+                <span class="dl-name" title="${escapeHtml(d.filePath || d.filename)}">${fileIconForName(d.filename)} ${escapeHtml(d.filename)}</span>
+                <span class="fs-tag" style="color:${statusColor};flex-shrink:0;">${escapeHtml(statusMap[d.status] || d.status)}</span>
+              </div>
+              ${d.status === 'downloading' ? `<div class="dl-bar"><div class="dl-bar-fill" style="width:${d.totalBytes ? pct : 35}%"></div></div>` : ''}
+              <div class="dl-meta">
+                <span>${escapeHtml(sizeText)}</span>
+                <span title="${escapeHtml(d.dir || '')}">${escapeHtml(d.dir || '')}</span>
+              </div>
+              <div class="dl-actions">
+                ${d.status === 'downloading'
+                  ? `<button class="dl-link danger" data-dl-cancel="${escapeHtml(d.id)}">取消</button>`
+                  : ''}
+                ${d.status === 'completed'
+                  ? `<a class="dl-link" href="${escapeHtml(withToken('/api/downloads/' + encodeURIComponent(d.id) + '/file'))}">取回本地</a>`
+                  : ''}
+                ${(d.status === 'failed' || d.status === 'cancelled') && d.url
+                  ? `<button class="dl-link" data-dl-retry="${escapeHtml(d.url)}">重试</button>`
+                  : ''}
+                ${d.status !== 'downloading'
+                  ? `<button class="dl-link danger" data-dl-del="${escapeHtml(d.id)}">删除记录</button>`
+                  : ''}
+                ${d.status === 'completed'
+                  ? `<button class="dl-link danger" data-dl-delfile="${escapeHtml(d.id)}">删文件</button>`
+                  : ''}
+              </div>
+            </div>`;
+        })
+        .join('')
+    : '<div class="side-empty">暂无下载任务<br/>可在上方粘贴直链下载到 NAS，<br/>或在网页中点击下载链接自动接管。</div>';
+
+  body.innerHTML = `
+    <div class="dl-toolbar">
+      <div class="dl-dir-row">
+        <span>存至</span>
+        <span class="dl-dir-path" title="${escapeHtml(dir)}">${escapeHtml(dir || '默认目录')}</span>
+        <button class="btn" id="dlPickDirBtn" type="button">更改</button>
+      </div>
+      <div class="dl-new-row">
+        <input type="text" id="dlNewUrlInput" placeholder="粘贴直链 URL 下载到 NAS..." autocomplete="off" spellcheck="false" />
+        <button class="btn" id="dlStartBtn" type="button">下载</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        ${canDlCurrent ? '<button class="dl-link" id="dlCurrentTabBtn" type="button">+ 下载当前页链接</button>' : '<span></span>'}
+        ${items.some((d) => d.status !== 'downloading') ? '<button class="dl-link" id="dlClearDoneBtn" type="button">清空已完成</button>' : ''}
+      </div>
+    </div>
+    <div id="dlListWrap">${listHtml}</div>
+  `;
+
+  document.getElementById('dlPickDirBtn').onclick = () => openFolderPicker();
+  const urlInput = document.getElementById('dlNewUrlInput');
+  const startBtn = document.getElementById('dlStartBtn');
+  startBtn.onclick = () => {
+    const val = urlInput.value.trim();
+    if (!val) return;
+    urlInput.value = '';
+    startNasDownload(val, '', false);
+  };
+  urlInput.onkeydown = (e) => {
+    if (e.key === 'Enter') startBtn.click();
+  };
+  const curBtn = document.getElementById('dlCurrentTabBtn');
+  if (curBtn && activeTab) {
+    curBtn.onclick = () => startNasDownload(activeTab.url, '', false);
+  }
+  const clearBtn = document.getElementById('dlClearDoneBtn');
+  if (clearBtn) {
+    clearBtn.onclick = async () => {
+      await fetch('/api/downloads', { method: 'DELETE', headers: authHeaders() });
+      await fetchDownloadsState();
+      drawDownloadsBody(body);
+    };
+  }
+  body.querySelectorAll('[data-dl-cancel]').forEach((btn) => {
+    btn.onclick = async () => {
+      await fetch(`/api/downloads/${encodeURIComponent(btn.getAttribute('data-dl-cancel'))}/cancel`, {
+        method: 'POST',
+        headers: authHeaders()
+      });
+      await fetchDownloadsState();
+      drawDownloadsBody(body);
+    };
+  });
+  body.querySelectorAll('[data-dl-retry]').forEach((btn) => {
+    btn.onclick = () => startNasDownload(btn.getAttribute('data-dl-retry'), '', false);
+  });
+  body.querySelectorAll('[data-dl-del]').forEach((btn) => {
+    btn.onclick = async () => {
+      await fetch(`/api/downloads/${encodeURIComponent(btn.getAttribute('data-dl-del'))}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+      await fetchDownloadsState();
+      drawDownloadsBody(body);
+    };
+  });
+  body.querySelectorAll('[data-dl-delfile]').forEach((btn) => {
+    btn.onclick = async () => {
+      await fetch(`/api/downloads/${encodeURIComponent(btn.getAttribute('data-dl-delfile'))}?deleteFile=1`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+      await fetchDownloadsState();
+      drawDownloadsBody(body);
+    };
+  });
+}
+
+async function renderDownloadPopover() {
+  const body = document.getElementById('downloadPopoverBody');
+  if (!body) return;
+  body.innerHTML = '<div class="side-empty">加载中…</div>';
+  await fetchDownloadsState();
+  drawDownloadsBody(body);
+}
+
+document.getElementById('dlPopCloseBtn').onclick = () => toggleDownloadPopover(false);
+
+// 飞牛存储目录选择器
+let pickerCurrentDir = '';
+let pickerParentDir = null;
+
+async function browsePickerDir(dir) {
+  const errEl = document.getElementById('fsErr');
+  if (errEl) errEl.textContent = '';
+  try {
+    const resp = await fetch(`/api/fs/list?dir=${encodeURIComponent(dir)}`, { headers: authHeaders() });
+    const data = await resp.json();
+    if (!resp.ok) {
+      if (errEl) errEl.textContent = data.error || '无法读取目录';
+      return;
+    }
+    pickerCurrentDir = data.dir;
+    pickerParentDir = data.parent;
+    document.getElementById('fsPathInput').value = data.dir;
+    document.getElementById('fsUpBtn').disabled = !data.parent;
+    document.querySelectorAll('#fsRoots .fs-chip').forEach((c) => {
+      c.classList.toggle('active', data.dir === c.getAttribute('data-root') || data.dir.startsWith(c.getAttribute('data-root') + '/'));
+    });
+
+    const listEl = document.getElementById('fsList');
+    if (!data.dirs.length) {
+      listEl.innerHTML = data.restricted
+        ? '<div class="side-empty" style="padding:18px;">此目录受飞牛权限限制，未列出子文件夹。<br/>你可以直接在上方输入完整路径（如 <code>/vol1/1000/Downloads</code>）并点「前往」，或在飞牛「应用设置 -> 文件夹权限」中授权。</div>'
+        : '<div class="side-empty" style="padding:20px;">此目录下没有子文件夹</div>';
+    } else {
+      listEl.innerHTML = data.dirs
+        .map(
+          (d) => `
+        <div class="fs-row" data-dir="${escapeHtml(d.path)}">
+          <span>📁 ${escapeHtml(d.name)}</span>
+          <span class="fs-tag">${d.writable ? '✓ 可写' : '🔒 只读'}</span>
+        </div>`
+        )
+        .join('');
+      listEl.querySelectorAll('.fs-row').forEach((row) => {
+        row.onclick = () => browsePickerDir(row.getAttribute('data-dir'));
+      });
+    }
+    if (!data.writable && errEl) {
+      errEl.textContent = data.restricted
+        ? '提示：应用默认无权浏览根目录，请直接进入已授权子目录或使用默认应用目录'
+        : '当前目录只读：请进入已授权的子目录，或在飞牛「应用设置 -> 文件夹权限」中授权';
+    }
+  } catch (err) {
+    if (errEl) errEl.textContent = err.message;
+  }
+}
+
+async function openFolderPicker() {
+  const modal = document.getElementById('folderModal');
+  const rootsEl = document.getElementById('fsRoots');
+  modal.classList.add('open');
+  try {
+    const resp = await fetch('/api/fs/roots', { headers: authHeaders() });
+    const data = await resp.json();
+    const roots = data.roots || [];
+    rootsEl.innerHTML = roots
+      .map(
+        (r) => `<button type="button" class="fs-chip" data-root="${escapeHtml(r.path)}">${escapeHtml(r.label)}</button>`
+      )
+      .join('');
+    rootsEl.querySelectorAll('.fs-chip').forEach((chip) => {
+      chip.onclick = () => browsePickerDir(chip.getAttribute('data-root'));
+    });
+    await browsePickerDir(state.settings.downloadDir || data.defaultDir || (roots[0] && roots[0].path) || '/');
+  } catch {}
+}
+
+function closeFolderPicker() {
+  document.getElementById('folderModal').classList.remove('open');
+}
+
+document.getElementById('folderModalClose').onclick = closeFolderPicker;
+document.getElementById('fsCancelBtn').onclick = closeFolderPicker;
+document.getElementById('fsUpBtn').onclick = () => {
+  if (pickerParentDir) browsePickerDir(pickerParentDir);
+};
+document.getElementById('fsGoBtn').onclick = () => {
+  const val = document.getElementById('fsPathInput').value.trim();
+  if (val) browsePickerDir(val);
+};
+document.getElementById('fsPathInput').onkeydown = (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('fsGoBtn').click();
+  }
+};
+document.getElementById('fsMkdirBtn').onclick = async () => {
+  const name = prompt('请输入新建文件夹名称：');
+  if (!name || !name.trim()) return;
+  const errEl = document.getElementById('fsErr');
+  const parentDir = document.getElementById('fsPathInput').value.trim() || pickerCurrentDir;
+  try {
+    const resp = await fetch('/api/fs/mkdir', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ parent: parentDir, name: name.trim() })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      if (errEl) errEl.textContent = data.error || '创建失败';
+      return;
+    }
+    await browsePickerDir(data.path);
+  } catch (err) {
+    if (errEl) errEl.textContent = err.message;
+  }
+};
+document.getElementById('fsConfirmBtn').onclick = async () => {
+  const errEl = document.getElementById('fsErr');
+  const chosenDir = document.getElementById('fsPathInput').value.trim() || pickerCurrentDir;
+  try {
+    const resp = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ downloadDir: chosenDir })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      if (errEl) errEl.textContent = data.error || '设置失败';
+      return;
+    }
+    state.settings.downloadDir = data.downloadDir;
+    downloadsCache.downloadDir = data.downloadDir;
+    closeFolderPicker();
+    const sDir = document.getElementById('settingsDownloadDir');
+    if (sDir) {
+      sDir.textContent = data.downloadDir;
+      sDir.title = data.downloadDir;
+    }
+    if (isDownloadPopoverOpen()) {
+      drawDownloadsBody(document.getElementById('downloadPopoverBody'));
+    }
+  } catch (err) {
+    if (errEl) errEl.textContent = err.message;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// 地址栏下拉：历史补全 + 书签匹配 + 搜索（全部来自真实数据）
+// ---------------------------------------------------------------------------
+const omni = { items: [], selected: -1, open: false };
+
+function buildOmniItems(raw) {
+  const text = raw.trim();
+  const items = [];
+  if (!text) {
+    // 空输入时展示最近历史
+    state.historyCache.slice(0, 6).forEach((h) => {
+      items.push({ kind: '历史', title: h.title, sub: h.url, target: h.url });
+    });
+    return items;
+  }
+  const lower = text.toLowerCase();
+  const resolved = resolveUserInput(text);
+  if (/^https?:\/\//i.test(resolved) && !resolved.includes('search?q=') && !resolved.includes('/s?wd=') && !resolved.includes('duckduckgo.com/?q=')) {
+    items.push({ kind: '打开', title: resolved, sub: '', target: text });
+  }
+  state.historyCache
+    .filter((h) => h.title.toLowerCase().includes(lower) || h.url.toLowerCase().includes(lower))
+    .slice(0, 5)
+    .forEach((h) => items.push({ kind: '历史', title: h.title, sub: h.url, target: h.url }));
+  state.bookmarks
+    .filter((b) => b.title.toLowerCase().includes(lower) || b.url.toLowerCase().includes(lower))
+    .slice(0, 3)
+    .forEach((b) => items.push({ kind: '书签', title: b.title, sub: b.url, target: b.url }));
+  const engine = SEARCH_ENGINES[state.settings.searchEngine] || SEARCH_ENGINES.bing;
+  items.push({ kind: '搜索', title: `用${engine.name}搜索 “${text}”`, sub: '', target: text });
+  return items;
+}
+
+function renderOmniDropdown() {
+  const dd = document.getElementById('omniDropdown');
+  const input = document.getElementById('urlInput');
+  if (!omni.open || !omni.items.length) {
+    dd.classList.remove('open');
+    return;
+  }
+  const rect = document.getElementById('omnibox').getBoundingClientRect();
+  dd.style.left = `${rect.left}px`;
+  dd.style.top = `${rect.bottom + 6}px`;
+  dd.style.width = `${rect.width}px`;
+  dd.innerHTML = omni.items
+    .map(
+      (it, i) => `
+    <div class="omni-row ${i === omni.selected ? 'selected' : ''}" data-idx="${i}">
+      <span class="omni-kind">${escapeHtml(it.kind)}</span>
+      <span class="omni-main">${escapeHtml(it.title)}</span>
+      ${it.sub ? `<span class="omni-sub">${escapeHtml(it.sub)}</span>` : ''}
+    </div>`
+    )
+    .join('');
+  dd.querySelectorAll('.omni-row').forEach((row) => {
+    row.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      activateOmniItem(parseInt(row.getAttribute('data-idx'), 10));
+    });
+    row.addEventListener('mousemove', () => {
+      if (omni.selected !== parseInt(row.getAttribute('data-idx'), 10)) {
+        omni.selected = parseInt(row.getAttribute('data-idx'), 10);
+        renderOmniDropdown();
+      }
+    });
+  });
+  dd.classList.add('open');
+}
+
+function openOmniDropdown() {
+  const input = document.getElementById('urlInput');
+  omni.items = buildOmniItems(input.value);
+  omni.selected = -1;
+  omni.open = true;
+  renderOmniDropdown();
+}
+
+function closeOmniDropdown() {
+  omni.open = false;
+  omni.selected = -1;
+  renderOmniDropdown();
+}
+
+function activateOmniItem(idx) {
+  const item = omni.items[idx];
+  if (!item) return;
+  const tab = getActiveTab();
+  closeOmniDropdown();
+  if (tab) navigateTab(tab.id, item.target);
+  document.getElementById('urlInput').blur();
+}
+
+// ---------------------------------------------------------------------------
+// 页内查找（对可同源访问的帧文档计数并用原生 find 跳转；跨源帧诚实降级）
+// ---------------------------------------------------------------------------
+const findState = { query: '', total: 0, current: 0, available: true };
+
+function resetFindState() {
+  findState.query = '';
+  findState.total = 0;
+  findState.current = 0;
+  const count = document.getElementById('findCount');
+  if (count) count.textContent = '';
+}
+
+function getFindContext() {
+  const tab = getActiveTab();
+  if (!tab) return null;
+  if (tab.url === 'fn://newtab') {
+    const pane = document.getElementById(`pane-${tab.id}`);
+    return pane ? { win: window, root: pane } : null;
+  }
+  const frame = document.getElementById(`frame-${tab.id}`);
+  if (!frame) return null;
+  try {
+    const doc = frame.contentDocument;
+    if (!doc || !doc.body) return { win: null, root: null };
+    return { win: frame.contentWindow, root: doc.body };
+  } catch {
+    return { win: null, root: null };
+  }
+}
+
+function countMatches(root, query) {
+  if (!root || !query) return 0;
+  const lower = query.toLowerCase();
+  let total = 0;
+  const doc = root.ownerDocument || document;
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      const parent = node.parentElement;
+      if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  let node;
+  while ((node = walker.nextNode())) {
+    const text = node.nodeValue.toLowerCase();
+    let idx = 0;
+    while ((idx = text.indexOf(lower, idx)) !== -1) {
+      total++;
+      idx += lower.length;
+    }
+  }
+  return total;
+}
+
+function updateFindCount() {
+  const el = document.getElementById('findCount');
+  if (!findState.available) {
+    el.textContent = '不可用';
+    return;
+  }
+  if (!findState.query) {
+    el.textContent = '';
+    return;
+  }
+  el.textContent = findState.total ? `${findState.current}/${findState.total}` : '0/0';
+}
+
+function runFind(dir) {
+  const input = document.getElementById('findInput');
+  const query = input.value;
+  const ctx = getFindContext();
+  if (!ctx || !ctx.root) {
+    findState.available = false;
+    updateFindCount();
+    return;
+  }
+  findState.available = true;
+  if (!query) {
+    findState.query = '';
+    findState.total = 0;
+    findState.current = 0;
+    updateFindCount();
+    return;
+  }
+  if (query !== findState.query) {
+    findState.query = query;
+    findState.total = countMatches(ctx.root, query);
+    findState.current = 0;
+  }
+  if (!findState.total) {
+    updateFindCount();
+    return;
+  }
+  if (dir >= 0) {
+    findState.current = findState.current >= findState.total ? 1 : findState.current + 1;
+  } else {
+    findState.current = findState.current <= 1 ? findState.total : findState.current - 1;
+  }
+  try {
+    if (ctx.win && typeof ctx.win.find === 'function') {
+      // 先回到文档起点再按方向查找，保证计数与高亮位置大致一致
+      ctx.win.find(query, false, dir < 0, true, false, true, false);
+    }
+  } catch {}
+  updateFindCount();
+}
+
+function openFindBar() {
+  const bar = document.getElementById('findBar');
+  bar.classList.add('open');
+  const input = document.getElementById('findInput');
+  input.focus();
+  input.select();
+  if (input.value) runFind(1);
+}
+
+function closeFindBar() {
+  document.getElementById('findBar').classList.remove('open');
+  try {
+    window.getSelection && window.getSelection().removeAllRanges();
+  } catch {}
+}
+
+document.getElementById('findNextBtn').onclick = () => runFind(1);
+document.getElementById('findPrevBtn').onclick = () => runFind(-1);
+document.getElementById('findCloseBtn').onclick = () => closeFindBar();
+document.getElementById('findInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    runFind(e.shiftKey ? -1 : 1);
+  } else if (e.key === 'Escape') {
+    closeFindBar();
+  }
+});
+document.getElementById('findInput').addEventListener('input', () => {
+  findState.query = '';
+  runFind(1);
+});
+
+// ---------------------------------------------------------------------------
+// 主菜单
+// ---------------------------------------------------------------------------
+function updateMenuEngineInfo() {
+  const el = document.getElementById('menuEngineInfo');
+  if (!el) return;
+  el.textContent = `当前内核：${kernelLabelForActiveTab()}`;
+}
+
+function toggleMenu(force) {
+  const menu = document.getElementById('menuPopup');
+  const open = typeof force === 'boolean' ? force : !menu.classList.contains('open');
+  if (open) {
+    syncZoomIndicators();
+    updateMenuEngineInfo();
+    updateHttpsSection();
+    const check = document.getElementById('bmbarCheck');
+    if (check) check.style.visibility = state.ui.showBookmarksBar ? 'visible' : 'hidden';
+    const menuSe = document.getElementById('menuSearchEngine');
+    if (menuSe) menuSe.value = state.settings.searchEngine || 'bing';
+    updateAuthPassStatus();
+  }
+  menu.classList.toggle('open', open);
+}
+
+// HTTPS 全功能区：地址取当前主机名 + 服务端报告的 HTTPS 端口
+function httpsShellUrl() {
+  let host = location.hostname || 'localhost';
+  if (host.includes(':') && !host.startsWith('[')) host = `[${host}]`;
+  return `https://${host}:${state.https.port}/`;
+}
+
+function updateHttpsSection() {
+  const link = document.getElementById('httpsUrlLink');
+  const desc = document.getElementById('httpsDesc');
+  const input = document.getElementById('certNamesInput');
+  const caExtras = document.getElementById('httpsCaExtras');
+  if (!link) return;
+  if (state.https.enabled) {
+    const url = httpsShellUrl();
+    link.href = url;
+    link.textContent = url;
+    if (caExtras) caExtras.style.display = state.https.mode === 'custom' ? 'none' : 'flex';
+    if (desc) {
+      desc.textContent =
+        state.https.mode === 'custom'
+          ? '已加载自定义外部证书，通过 HTTPS 地址打开极光浏览器可直接激活 Scramjet 内核（免装根证书）：'
+          : '通过 HTTPS 地址打开极光浏览器可激活 Scramjet 内核（站点与视频兼容性最佳）。若使用自带证书，先在本设备安装并信任根证书；若已配置反向代理，可直接打开反代 HTTPS 地址：';
+    }
+  } else {
+    link.removeAttribute('href');
+    link.textContent = 'HTTPS 未启用';
+    if (caExtras) caExtras.style.display = 'flex';
+    if (desc) desc.textContent = '本机的 HTTPS 入口未能启动，根证书下载与 Scramjet 全功能暂不可用。';
+  }
+  if (input && document.activeElement !== input) {
+    const cn = state.settings.certNames;
+    input.value = Array.isArray(cn) ? cn.join(', ') : cn || '';
+  }
+}
+
+async function saveCertNames() {
+  const input = document.getElementById('certNamesInput');
+  const btn = document.getElementById('saveCertNamesBtn');
+  const value = input ? input.value.trim() : '';
+  state.settings.certNames = value;
+  try {
+    const resp = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ certNames: value })
+    });
+    if (btn) {
+      btn.textContent = resp.ok ? '已保存 ✓' : '保存失败';
+      setTimeout(() => { btn.textContent = '保存'; }, 2000);
+    }
+  } catch (e) {
+    if (btn) {
+      btn.textContent = '保存失败';
+      setTimeout(() => { btn.textContent = '保存'; }, 2000);
+    }
+  }
+}
+
+const menuSearchEngineEl = document.getElementById('menuSearchEngine');
+if (menuSearchEngineEl) {
+  menuSearchEngineEl.addEventListener('change', async (e) => {
+    state.settings.searchEngine = e.target.value;
+    try {
+      await fetch('/api/settings', {
+        method: 'PUT',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ searchEngine: e.target.value })
+      });
+    } catch {}
+  });
+}
+
+function openSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  if (!modal) return;
+  const menuSe = document.getElementById('menuSearchEngine');
+  if (menuSe) menuSe.value = state.settings.searchEngine || 'bing';
+  const themeSel = document.getElementById('settingsThemeSelect');
+  if (themeSel) themeSel.value = state.settings.theme || 'system';
+  const dlDirEl = document.getElementById('settingsDownloadDir');
+  if (dlDirEl) {
+    const dir = state.settings.downloadDir || '默认目录';
+    dlDirEl.textContent = dir;
+    dlDirEl.title = dir;
+  }
+  updateAuthPassStatus();
+  updateHttpsSection();
+  modal.classList.add('open');
+}
+
+function closeSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  if (modal) modal.classList.remove('open');
+}
+
+document.getElementById('settingsCloseBtn').onclick = closeSettingsModal;
+document.getElementById('settingsOkBtn').onclick = closeSettingsModal;
+document.getElementById('saveAuthPassBtn').onclick = saveAuthPass;
+document.getElementById('saveCertNamesBtn').onclick = saveCertNames;
+document.getElementById('settingsPickDirBtn').onclick = () => openFolderPicker();
+document.getElementById('settingsDiagBtn').onclick = () => {
+  closeSettingsModal();
+  openDiagnosticsModal();
+};
+document.getElementById('settingsThemeSelect').addEventListener('change', async (e) => {
+  state.settings.theme = e.target.value;
+  applyTheme(e.target.value);
+  try {
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ theme: e.target.value })
+    });
+  } catch {}
+});
+
+document.getElementById('menuBtn').onclick = (e) => {
+  e.stopPropagation();
+  toggleMenu();
+};
+
+document.getElementById('menuPopup').addEventListener('click', (e) => {
+  const item = e.target.closest('[data-action]');
+  if (!item) return;
+  const action = item.getAttribute('data-action');
+  const tab = getActiveTab();
+  switch (action) {
+    case 'newtab':
+      createTab('fn://newtab');
+      break;
+    case 'reopen-tab':
+      reopenLastClosedTab();
+      break;
+    case 'history':
+      openSidebar('history');
+      break;
+    case 'bookmarks-panel':
+      openSidebar('bookmarks');
+      break;
+    case 'downloads-panel':
+      toggleDownloadPopover(true);
+      break;
+    case 'toggle-bmbar':
+      setBookmarksBarVisible(!state.ui.showBookmarksBar);
+      return; // 保持菜单打开以便看到勾选状态变化
+    case 'zoom-in':
+      stepZoom(tab, 1);
+      return;
+    case 'zoom-out':
+      stepZoom(tab, -1);
+      return;
+    case 'zoom-reset':
+      setZoom(tab, 1);
+      return;
+    case 'find':
+      openFindBar();
+      break;
+    case 'theme':
+      toggleTheme();
+      break;
+    case 'diagnostics':
+      openDiagnosticsModal();
+      break;
+    case 'open-settings':
+      openSettingsModal();
+      break;
+  }
+  toggleMenu(false);
+});
+
+let ctxTabId = null;
+function openTabContextMenu(tabId, x, y) {
+  ctxTabId = tabId;
+  const menu = document.getElementById('tabContextMenu');
+  if (!menu) return;
+  menu.style.left = `${Math.min(x, window.innerWidth - 200)}px`;
+  menu.style.top = `${Math.min(y, window.innerHeight - 220)}px`;
+  menu.style.right = 'auto';
+  menu.classList.add('open');
+}
+
+function closeTabContextMenu() {
+  const menu = document.getElementById('tabContextMenu');
+  if (menu) menu.classList.remove('open');
+}
+
+document.getElementById('tabContextMenu').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-tab-act]');
+  if (!btn || !ctxTabId) return;
+  const act = btn.getAttribute('data-tab-act');
+  const tab = state.tabs.find((t) => t.id === ctxTabId);
+  closeTabContextMenu();
+  if (!tab && act !== 'reopen') return;
+  if (act === 'reload') navigateTab(tab.id, tab.url, true);
+  else if (act === 'duplicate') createTab(tab.url);
+  else if (act === 'close') closeTab(tab.id);
+  else if (act === 'close-others') {
+    state.tabs.filter((t) => t.id !== tab.id).forEach((t) => closeTab(t.id));
+  } else if (act === 'close-right') {
+    const idx = state.tabs.findIndex((t) => t.id === tab.id);
+    if (idx !== -1) state.tabs.slice(idx + 1).forEach((t) => closeTab(t.id));
+  } else if (act === 'reopen') reopenLastClosedTab();
+});
+
+document.addEventListener('click', (e) => {
+  const tabMenu = document.getElementById('tabContextMenu');
+  if (tabMenu && tabMenu.classList.contains('open') && !tabMenu.contains(e.target)) {
+    closeTabContextMenu();
+  }
+  const menu = document.getElementById('menuPopup');
+  if (menu.classList.contains('open') && !menu.contains(e.target) && e.target.id !== 'menuBtn') {
+    toggleMenu(false);
+  }
+  const dlPop = document.getElementById('downloadPopover');
+  const dlBtn = document.getElementById('downloadsBtn');
+  const folderModal = document.getElementById('folderModal');
+  if (
+    dlPop &&
+    dlPop.classList.contains('open') &&
+    !dlPop.contains(e.target) &&
+    !(dlBtn && dlBtn.contains(e.target)) &&
+    !(folderModal && folderModal.classList.contains('open'))
+  ) {
+    toggleDownloadPopover(false);
+  }
+  const dd = document.getElementById('omniDropdown');
+  if (omni.open && !dd.contains(e.target) && e.target.id !== 'urlInput') {
+    closeOmniDropdown();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 顶部工具栏按钮与地址栏绑定
+// ---------------------------------------------------------------------------
+document.getElementById('newTabBtn').onclick = () => createTab('fn://newtab');
+
+document.getElementById('backBtn').onclick = () => {
+  const tab = getActiveTab();
+  if (tab && tab.historyIndex > 0) {
+    tab.historyIndex -= 1;
+    navigateTab(tab.id, tab.history[tab.historyIndex], true);
+  }
+};
+
+document.getElementById('forwardBtn').onclick = () => {
+  const tab = getActiveTab();
+  if (tab && tab.historyIndex < tab.history.length - 1) {
+    tab.historyIndex += 1;
+    navigateTab(tab.id, tab.history[tab.historyIndex], true);
+  }
+};
+
+document.getElementById('reloadBtn').onclick = () => {
+  const tab = getActiveTab();
+  if (tab) navigateTab(tab.id, tab.url, true);
+};
+
+document.getElementById('homeBtn').onclick = () => {
+  const tab = getActiveTab();
+  if (tab) navigateTab(tab.id, 'fn://newtab');
+};
+
+const urlInputEl = document.getElementById('urlInput');
+let omniComposing = false;
+let omniSelectOnMouseUp = false;
+let omniLastTyped = '';
+
+function findInlineSuggestion(raw) {
+  if (!raw || /\s/.test(raw)) return null;
+  const q = raw.toLowerCase();
+  const candidates = [];
+  state.bookmarks.forEach((b) => candidates.push(b.url));
+  state.historyCache.forEach((h) => candidates.push(h.url));
+  for (const url of candidates) {
+    if (!url || !/^https?:\/\//i.test(url)) continue;
+    const stripped = url.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+    const strippedNoSlash = stripped.replace(/\/$/, '');
+    if (url.toLowerCase().startsWith(q) && url.length > raw.length) {
+      return { completed: raw + url.slice(raw.length), target: url };
+    }
+    if (stripped.toLowerCase().startsWith(q) && strippedNoSlash.length > raw.length) {
+      return { completed: raw + strippedNoSlash.slice(raw.length), target: url };
+    }
+  }
+  return null;
+}
+
+document.getElementById('omniboxLockBtn').onclick = () => openDiagnosticsModal();
+
+urlInputEl.addEventListener('compositionstart', () => {
+  omniComposing = true;
+});
+urlInputEl.addEventListener('compositionend', () => {
+  omniComposing = false;
+  if (document.activeElement === urlInputEl) openOmniDropdown();
+});
+urlInputEl.addEventListener('focus', () => {
+  omniSelectOnMouseUp = true;
+  urlInputEl.select();
+  openOmniDropdown();
+  refreshHistoryCache().then(() => {
+    if (document.activeElement === urlInputEl && !omniComposing) {
+      omni.items = buildOmniItems(urlInputEl.value);
+      renderOmniDropdown();
+    }
+  });
+});
+urlInputEl.addEventListener('mouseup', (e) => {
+  if (omniSelectOnMouseUp) {
+    omniSelectOnMouseUp = false;
+    e.preventDefault();
+  }
+});
+urlInputEl.addEventListener('input', (e) => {
+  if (omniComposing) return;
+  const val = urlInputEl.value;
+  const isDelete = e.inputType && e.inputType.startsWith('delete');
+  omniLastTyped = val;
+  if (!isDelete && val && urlInputEl.selectionStart === val.length) {
+    const sug = findInlineSuggestion(val);
+    if (sug) {
+      urlInputEl.value = sug.completed;
+      urlInputEl.setSelectionRange(val.length, sug.completed.length);
+    }
+  }
+  if (omni.open || document.activeElement === urlInputEl) openOmniDropdown();
+});
+urlInputEl.addEventListener('blur', () => {
+  omniSelectOnMouseUp = false;
+  setTimeout(() => closeOmniDropdown(), 120);
+});
+urlInputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowDown' && omni.items.length) {
+    e.preventDefault();
+    omni.open = true;
+    omni.selected = omni.selected >= omni.items.length - 1 ? 0 : omni.selected + 1;
+    const item = omni.items[omni.selected];
+    if (item && item.target) urlInputEl.value = item.target;
+    renderOmniDropdown();
+  } else if (e.key === 'ArrowUp' && omni.items.length) {
+    e.preventDefault();
+    omni.selected = omni.selected <= 0 ? omni.items.length - 1 : omni.selected - 1;
+    const item = omni.items[omni.selected];
+    if (item && item.target) urlInputEl.value = item.target;
+    renderOmniDropdown();
+  } else if (e.key === 'Enter') {
+    const tab = getActiveTab();
+    if (!tab) return;
+    if (omni.open && omni.selected >= 0) {
+      activateOmniItem(omni.selected);
+    } else {
+      closeOmniDropdown();
+      navigateTab(tab.id, e.target.value);
+      e.target.blur();
+    }
+  } else if (e.key === 'Escape') {
+    closeOmniDropdown();
+    syncToolbarWithActiveTab();
+    e.target.blur();
+  }
+});
+
+async function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  state.settings.theme = next;
+  applyTheme(next);
+  await fetch('/api/settings', {
+    method: 'PUT',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ theme: next })
+  });
+}
+document.getElementById('themeBtn').onclick = () => toggleTheme();
+
+document.getElementById('engineBadge').onclick = () => {
+  const tab = getActiveTab();
+  if (tab && tab.url !== 'fn://newtab' && !state.sj.ready && state.engineMode === 'scramjet') {
+    bootScramjet();
+  }
+};
+
+document.getElementById('statusZoom').onclick = () => {
+  const tab = getActiveTab();
+  if (tab) setZoom(tab, 1);
+};
+
+// Ctrl+滚轮缩放当前标签页
+document.getElementById('viewportContainer').addEventListener(
+  'wheel',
+  (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    const tab = getActiveTab();
+    if (!tab) return;
+    const cur = tab.zoom || 1;
+    setZoom(tab, cur + (e.deltaY < 0 ? 0.1 : -0.1));
+  },
+  { passive: false }
+);
+
+// 监听 iframe 内部发送的导航同步事件
+window.addEventListener('message', (event) => {
+  if (!event.data || event.data.type !== 'fn-browser-nav') return;
+  const tab = (event.data.tabId && state.tabs.find((t) => t.id === event.data.tabId)) || getActiveTab();
+  if (!tab) return;
+  let urlChanged = false;
+  if (event.data.url && /^https?:\/\//i.test(event.data.url) && event.data.url !== tab.url) {
+    tab.url = event.data.url;
+    tab.history = tab.history.slice(0, tab.historyIndex + 1);
+    tab.history.push(tab.url);
+    tab.historyIndex = tab.history.length - 1;
+    urlChanged = true;
+  }
+  if (event.data.title) tab.title = event.data.title;
+  if (urlChanged || event.data.title) {
+    renderTabStrip();
+    syncToolbarWithActiveTab();
+  }
+});
+
+// 快捷键支持
+window.addEventListener('keydown', (e) => {
+  const mod = e.ctrlKey || e.metaKey;
+  const key = e.key.toLowerCase();
+  const tab = getActiveTab();
+
+  if (mod && e.shiftKey && key === 't') {
+    e.preventDefault();
+    reopenLastClosedTab();
+  } else if (mod && key === 't') {
+    e.preventDefault();
+    createTab('fn://newtab');
+  } else if (mod && key === 'w') {
+    e.preventDefault();
+    if (tab) closeTab(tab.id);
+  } else if (mod && key === 'l') {
+    e.preventDefault();
+    const input = document.getElementById('urlInput');
+    input.focus();
+    input.select();
+  } else if (mod && key === 'f') {
+    e.preventDefault();
+    openFindBar();
+  } else if (mod && key === 'h') {
+    e.preventDefault();
+    toggleSidebar('history');
+  } else if (mod && key === 'j') {
+    e.preventDefault();
+    toggleDownloadPopover();
+  } else if (mod && e.shiftKey && key === 'b') {
+    e.preventDefault();
+    setBookmarksBarVisible(!state.ui.showBookmarksBar);
+  } else if (mod && key === 'tab') {
+    e.preventDefault();
+    if (state.tabs.length > 1) {
+      const idx = state.tabs.findIndex((t) => t.id === state.activeTabId);
+      const next = e.shiftKey
+        ? (idx - 1 + state.tabs.length) % state.tabs.length
+        : (idx + 1) % state.tabs.length;
+      switchTab(state.tabs[next].id);
+    }
+  } else if (mod && /^[1-9]$/.test(key)) {
+    e.preventDefault();
+    const n = parseInt(key, 10);
+    const targetTab = key === '9' ? state.tabs[state.tabs.length - 1] : state.tabs[n - 1];
+    if (targetTab) switchTab(targetTab.id);
+  } else if (mod && (key === '=' || key === '+')) {
+    e.preventDefault();
+    stepZoom(tab, 1);
+  } else if (mod && key === '-') {
+    e.preventDefault();
+    stepZoom(tab, -1);
+  } else if (mod && key === '0') {
+    e.preventDefault();
+    setZoom(tab, 1);
+  } else if (mod && key === 'r') {
+    e.preventDefault();
+    if (tab) navigateTab(tab.id, tab.url, true);
+  } else if (e.altKey && e.key === 'ArrowLeft') {
+    e.preventDefault();
+    document.getElementById('backBtn').click();
+  } else if (e.altKey && e.key === 'ArrowRight') {
+    e.preventDefault();
+    document.getElementById('forwardBtn').click();
+  } else if (e.key === 'Escape') {
+    if (document.getElementById('findBar').classList.contains('open')) closeFindBar();
+    toggleMenu(false);
+    toggleDownloadPopover(false);
+  }
+});
+
+// 系统主题变化时，若设置为跟随系统则实时切换
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (state.settings.theme === 'system') applyTheme('system');
+});
+
+// 连接自检诊断面板
+async function runDiagnostics() {
+  const body = document.getElementById('diagBody');
+  const hint = document.getElementById('diagHint');
+  if (!body) return;
+  if (hint) hint.textContent = '正在检测…';
+
+  const items = [
+    { key: 'ctx', name: '1. 安全上下文 (HTTPS / localhost)', ok: null, detail: '检测中…' },
+    { key: 'sw', name: '2. Service Worker 控制权', ok: null, detail: '检测中…' },
+    { key: 'tls', name: '3. HTTPS / 证书连通性', ok: null, detail: '检测中…' },
+    { key: 'ws', name: '4. Wisp WebSocket 通道', ok: null, detail: '检测中…' }
+  ];
+
+  const render = () => {
+    body.innerHTML = items
+      .map((it) => {
+        const badge = it.ok === null ? '⏳' : (it.ok ? '✓ 正常' : '✕ 异常');
+        const color = it.ok === null ? 'var(--text-muted)' : (it.ok ? '#00b42a' : '#e5484d');
+        return `
+          <div class="fs-row" style="cursor:default;flex-direction:column;align-items:flex-start;gap:4px;">
+            <div style="display:flex;width:100%;justify-content:space-between;align-items:center;">
+              <span style="font-weight:500;">${escapeHtml(it.name)}</span>
+              <span style="font-size:12px;color:${color};font-weight:600;">${badge}</span>
+            </div>
+            <div style="font-size:11.5px;color:var(--text-muted);">${escapeHtml(it.detail)}</div>
+          </div>`;
+      })
+      .join('');
+  };
+  render();
+
+  items[0].ok = Boolean(window.isSecureContext);
+  items[0].detail = items[0].ok
+    ? `当前为安全上下文 (${location.origin})`
+    : '非安全上下文（HTTP），无法激活 Scramjet，请改用 HTTPS 或 localhost 访问';
+  render();
+
+  const swSupported = 'serviceWorker' in navigator;
+  const swActive = swSupported && Boolean(navigator.serviceWorker.controller);
+  items[1].ok = swActive;
+  items[1].detail = !swSupported
+    ? '当前浏览器不支持 Service Worker'
+    : (swActive ? 'Service Worker 已激活并接管页面' : 'Service Worker 未接管（通常因非安全上下文或未信任自签证书）');
+  render();
+
+  try {
+    const probeUrl = location.protocol === 'https:' ? '/healthz' : httpsShellUrl() + 'healthz';
+    const resp = await fetch(probeUrl, { cache: 'no-store' });
+    items[2].ok = resp.ok;
+    items[2].detail = resp.ok ? `HTTPS 探活成功 (${probeUrl})` : `HTTPS 返回异常 HTTP ${resp.status}`;
+  } catch (err) {
+    items[2].ok = false;
+    items[2].detail = '无法访问 HTTPS 入口（请检查 18921 端口连通性或是否已信任根证书）';
+  }
+  render();
+
+  await new Promise((resolve) => {
+    try {
+      const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${scheme}//${location.host}/wisp/`);
+      const timer = setTimeout(() => {
+        try { ws.close(); } catch {}
+        items[3].ok = false;
+        items[3].detail = 'WebSocket 连接超时（请检查反向代理是否开启 WebSocket 支持）';
+        resolve();
+      }, 3500);
+      ws.onopen = () => {
+        clearTimeout(timer);
+        items[3].ok = true;
+        items[3].detail = 'Wisp WebSocket 握手成功';
+        try { ws.close(); } catch {}
+        resolve();
+      };
+      ws.onerror = () => {
+        clearTimeout(timer);
+        items[3].ok = false;
+        items[3].detail = 'Wisp WebSocket 握手失败（反代需开启 WebSocket，或检查 AUTH_TOKEN）';
+        resolve();
+      };
+    } catch {
+      items[3].ok = false;
+      items[3].detail = '无法建立 WebSocket 连接';
+      resolve();
+    }
+  });
+  render();
+  if (hint) {
+    hint.textContent = items.every((i) => i.ok) ? '全部检测通过，Scramjet 可满血运行' : '存在异常项，请按提示排查';
+  }
+}
+
+function openDiagnosticsModal() {
+  const modal = document.getElementById('diagModal');
+  if (!modal) return;
+  modal.classList.add('open');
+  runDiagnostics();
+}
+
+function closeDiagnosticsModal() {
+  const modal = document.getElementById('diagModal');
+  if (modal) modal.classList.remove('open');
+}
+
+document.getElementById('diagCloseBtn').onclick = closeDiagnosticsModal;
+document.getElementById('diagOkBtn').onclick = closeDiagnosticsModal;
+document.getElementById('diagRetryBtn').onclick = runDiagnostics;
+
+function updateAuthPassStatus() {
+  const statusEl = document.getElementById('authPassStatus');
+  const inputEl = document.getElementById('authPassInput');
+  const btnEl = document.getElementById('saveAuthPassBtn');
+  if (!statusEl) return;
+  if (state.settings.envLocked) {
+    statusEl.textContent = '已通过环境变量 AUTH_TOKEN 锁定，界面不可修改。';
+    if (inputEl) inputEl.disabled = true;
+    if (btnEl) btnEl.disabled = true;
+  } else {
+    if (inputEl) inputEl.disabled = false;
+    if (btnEl) btnEl.disabled = false;
+    statusEl.textContent = state.settings.hasAuthPassword
+      ? '状态：已开启访问密码保护（留空保存可关闭）。'
+      : '状态：未开启密码保护（公网暴露建议设置）。';
+  }
+}
+
+async function saveAuthPass() {
+  const input = document.getElementById('authPassInput');
+  const btn = document.getElementById('saveAuthPassBtn');
+  if (!input) return;
+  const val = input.value.trim();
+  try {
+    const resp = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ authPassword: val })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      if (btn) {
+        btn.textContent = '失败';
+        setTimeout(() => { btn.textContent = '保存'; }, 2000);
+      }
+      return;
+    }
+    state.settings = data;
+    input.value = '';
+    updateAuthPassStatus();
+    if (btn) {
+      btn.textContent = val ? '已开启 ✓' : '已关闭 ✓';
+      setTimeout(() => { btn.textContent = '保存'; }, 2000);
+    }
+  } catch {
+    if (btn) {
+      btn.textContent = '失败';
+      setTimeout(() => { btn.textContent = '保存'; }, 2000);
+    }
+  }
+}
+
+async function ensureAuthenticated() {
+  try {
+    const resp = await fetch('/api/auth/status', { cache: 'no-store' });
+    if (!resp.ok) return true;
+    const info = await resp.json();
+    if (!info.authRequired || info.authenticated) return true;
+
+    const modal = document.getElementById('authLockModal');
+    const input = document.getElementById('authLockInput');
+    const errEl = document.getElementById('authLockErr');
+    const submitBtn = document.getElementById('authLockSubmitBtn');
+    modal.classList.add('open');
+    setTimeout(() => input.focus(), 50);
+
+    await new Promise((resolve) => {
+      const submit = async () => {
+        const pwd = input.value;
+        if (!pwd) {
+          errEl.textContent = '请输入访问密码';
+          return;
+        }
+        submitBtn.disabled = true;
+        errEl.textContent = '';
+        try {
+          const r = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pwd })
+          });
+          if (r.ok) {
+            modal.classList.remove('open');
+            resolve();
+            return;
+          }
+          const d = await r.json().catch(() => ({}));
+          errEl.textContent = d.error || '访问密码错误';
+        } catch {
+          errEl.textContent = '网络异常，请重试';
+        } finally {
+          submitBtn.disabled = false;
+        }
+      };
+      submitBtn.onclick = submit;
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') submit();
+      };
+    });
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+// 启动初始化
+(async function init() {
+  await ensureAuthenticated();
+  try {
+    const [statusResp, settingsResp] = await Promise.all([
+      fetch('/api/status', { headers: authHeaders() }),
+      fetch('/api/settings', { headers: authHeaders() })
+    ]);
+    const status = await statusResp.json();
+    state.engineMode = status.engine || 'lite';
+    if (status.https) {
+      state.https = {
+        enabled: !!status.https.enabled,
+        port: status.https.port || 18921,
+        mode: status.https.mode || 'ca'
+      };
+    }
+    const badge = document.getElementById('engineBadge');
+    badge.title = `内存占用: ${status.memoryMB} MB`;
+    updateEngineBadge();
+    const info = document.getElementById('menuEngineInfo');
+    if (info) {
+      info.textContent = `内核：${kernelLabelForActiveTab()} · 版本 ${status.version} · 内存 ${status.memoryMB} MB`;
+    }
+    if (state.engineMode === 'scramjet') {
+      bootScramjet();
+    }
+
+    state.settings = await settingsResp.json();
+    if (typeof state.settings.showBookmarksBar === 'boolean') {
+      state.ui.showBookmarksBar = state.settings.showBookmarksBar;
+    }
+    updateHttpsSection();
+    if (!window.isSecureContext && state.https.enabled) {
+      const bar = document.getElementById('httpsPromptBar');
+      const link = document.getElementById('httpsPromptLink');
+      if (bar && link) {
+        link.href = httpsShellUrl();
+        bar.style.display = 'flex';
+        document.getElementById('httpsPromptClose').onclick = () => { bar.style.display = 'none'; };
+      }
+    }
+    applyTheme(state.settings.theme || 'system');
+  } catch (e) {
+    applyTheme('system');
+  }
+
+  await loadBookmarks();
+  refreshHistoryCache();
+  createTab('fn://newtab');
+})();
+</script>
+</body>
+</html>

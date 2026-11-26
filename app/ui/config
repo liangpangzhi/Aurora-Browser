@@ -1,0 +1,17 @@
+{
+  ".url": {
+    "fn-browser.Application": {
+      "title": "极光浏览器",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "https",
+      "port": "18921",
+      "url": "/",
+      "allUsers": false,
+      "control": {
+        "accessPerm": "editable",
+        "fullScreen": true
+      }
+    }
+  }
+}

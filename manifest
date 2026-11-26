@@ -1,0 +1,12 @@
+appname               = fn-browser
+version               = 1.0.6
+display_name          = 极光浏览器
+desc                  = 极光浏览器 Aurora · 飞牛 fnOS 原生网页代理浏览器，支持多标签页、书签/历史与 NAS 下载管理。激活 Scramjet 满血内核需通过 18921 端口 HTTPS 访问：请在右上角菜单「HTTPS 全功能」下载并信任根证书（支持 Windows/Android/iOS），或通过飞牛反向代理配置已有域名证书。
+platform              = arm
+source                = thirdparty
+maintainer            = huidegit2
+distributor           = huidegit2
+desktop_uidir         = ui
+desktop_applaunchname = fn-browser.Application
+service_port          = 18920
+checkport             = false

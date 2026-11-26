@@ -1,0 +1,7 @@
+{
+  "defaults": {
+    "run-as": "package"
+  },
+  "username": "fn-browser",
+  "groupname": "fn-browser"
+}

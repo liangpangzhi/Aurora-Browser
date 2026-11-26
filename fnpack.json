@@ -1,0 +1,182 @@
+{
+  "schema_version": "2",
+  "source_info": {
+    "name": "极光浏览器应用源",
+    "author": "huidegit2",
+    "homepage": "https://github.com/huidegit2/Aurora-Browser",
+    "description": "极光浏览器 Aurora · 飞牛 fnOS 原生网页代理浏览器（FnDepot V2 外部应用源）"
+  },
+  "apps": {
+    "fn-browser": {
+      "display_name": "极光浏览器",
+      "desc": "极光浏览器 Aurora · 飞牛 fnOS 原生网页代理浏览器，搭载 Scramjet 满血内核，支持 Chrome 风格下载气泡浮窗、飞牛存储目录直下与多标签页管理。\n\n【证书与满血内核说明】Scramjet 内核依赖浏览器安全上下文（受信任的 HTTPS）：\n1. 局域网 IP 访问（18921 端口）：打开右上角菜单「HTTPS 全功能」，下载并安装信任根证书（Windows/Android：/aurora-ca.crt；iPhone/iPad：/aurora-ca.mobileconfig），仅需安装一次即可消除「不安全」提示并激活满血内核。\n2. 已有域名证书（免装根证书）：可在飞牛「反向代理」将 HTTPS 域名反代至 18920 端口（开启 WebSocket），或将证书放入数据目录 tls/custom.crt.pem 与 custom.key.pem。",
+      "platform": [
+        "arm",
+        "x86"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "./ICON_256.PNG",
+      "preview_urls": [
+        "./assets/previews/1.jpg",
+        "./assets/previews/2.jpg",
+        "./assets/previews/3.jpg"
+      ],
+      "readme_url": "./README.md",
+      "bug_report_url": "https://github.com/huidegit2/Aurora-Browser/issues",
+      "maintainer": "huidegit2",
+      "maintainer_url": "https://github.com/huidegit2/Aurora-Browser",
+      "run_as": "package",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "18920",
+      "releases": {
+        "1.0.15": {
+          "changelog": "飞牛桌面入口改为新标签页打开（type=url），解决 iframe 嵌套黑屏与拦截问题；圆角抗锯齿图标；线性矢量 SVG 工具栏；/vol1 权限容错与 NAS 下载管理。",
+          "updated_at": "2026-11-25T14:38:33+08:00",
+          "packages": {
+            "arm": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.15/fn-browser-arm64.fpk",
+              "sha256": "67ce0a1f97f2c50b219c73c26a1db796adc22536e9702885008cf96d7b9e3ec8",
+              "size": 43984706
+            },
+            "x86": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.15/fn-browser-x86_64.fpk",
+              "sha256": "ad65c5459a313f7f81bb43eac20140ed50670a72000671a1fe2b28b985035fd2",
+              "size": 44022553
+            }
+          }
+        },
+        "1.0.16": {
+          "changelog": "### 新增\n\n- Chrome 风格独立下载气泡浮窗：将下载管理从侧边栏拆出，支持文件类型图标、实时角标计数、一键「下载当前页链接」、失败重试与直接清理 NAS 文件。\n- `Ctrl+Shift+T` 恢复最近关闭的标签页（菜单同步新增入口）。\n- 适配 [EWEDLCM/FnDepot](https://github.com/EWEDLCM/FnDepot/) V2 外部应用源规范：根目录新增 `fnpack.json`，支持通过 GitHub 仓库或直链订阅更新。",
+          "updated_at": "2026-11-25T06:59:36+00:00",
+          "packages": {
+            "arm": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.16/fn-browser-arm64.fpk",
+              "sha256": "02770dfefb572a2af54061472bea38451a81e741933d5aa14790795a9440e0fe",
+              "size": 43985818
+            },
+            "x86": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.16/fn-browser-x86_64.fpk",
+              "sha256": "71c2f9d02e85cb2bd0b113ddcf4fb60b1d792fe8fe7267023edd89972d5af5e0",
+              "size": 44023193
+            }
+          }
+        },
+        "1.0.17": {
+          "changelog": "极光 Aurora v1.0.17\n\n- 请查看仓库提交记录获取本次变更。\n- ARM64 与 x86_64 双架构安装包已随本版本发布。",
+          "updated_at": "2026-11-25T07:12:50+00:00",
+          "packages": {
+            "arm": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.17/fn-browser-arm64.fpk",
+              "sha256": "f3fc8da781b7749dd2d21ae01dd1196f8279325847f29fdb60bf97d0489b08a8",
+              "size": 43985964
+            },
+            "x86": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.17/fn-browser-x86_64.fpk",
+              "sha256": "eed75eb39b2153f3eacf60aaf341570966f477854746755b4a3d13b396c92140",
+              "size": 44019976
+            }
+          }
+        },
+        "1.0.18": {
+          "changelog": "极光 Aurora v1.0.18\n\n- 请查看仓库提交记录获取本次变更。\n- ARM64 与 x86_64 双架构安装包已随本版本发布。",
+          "updated_at": "2026-11-25T07:14:52+00:00",
+          "packages": {
+            "arm": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.18/fn-browser-arm64.fpk",
+              "sha256": "d63279b1c39761d5d42bc85f37954c4635a286c20354197a58c340287a7d8fd9",
+              "size": 43985957
+            },
+            "x86": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.18/fn-browser-x86_64.fpk",
+              "sha256": "c8c0f5f0a274375da64acf6fac062a48566e93710456135c39c944362fac8055",
+              "size": 44023424
+            }
+          }
+        },
+        "1.0.19": {
+          "changelog": "### 新增\n\n- **连接自检面板与 `/healthz`**：主菜单新增「连接自检」，一键诊断安全上下文、Service Worker、HTTPS/证书连通性与 `/wisp/` WebSocket 通道。\n- **鉴权安全加固**：访问携带的 `?_aurora_token=` 参数读取后立即从地址栏清除，并新增 `POST /api/auth/session` 交换 `HttpOnly` 会话 Cookie。\n\n### 优化\n\n- **服务端模块化重构**：将 `app/server/index.js` 拆分为 `storage.js`、`tls.js`、`downloads.js`、`lite-proxy.js`，提升可维护性。\n- **fnOS 权限与日志加固**：权限不足返回明确错误码 `EACCES_SHARE_PATH`；`cmd/main` 启动前自动轮转超过 5 MB 的运行日志。\n- **CI/CD 与开源规范**：`release.yml` 增加静态语法/JSON 校验与 `npm` 缓存，`extract_changelog.py` 未匹配段落时自动回退读取 `git log`；补充 `AGPL-3.0` `LICENSE` 与 `.github/dependabot.yml`。",
+          "updated_at": "2026-11-25T08:56:54+00:00",
+          "packages": {
+            "arm": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.19/fn-browser-arm64.fpk",
+              "sha256": "d72ab8be1a3ada0310d9590d96ed91125f2290a212c6175514551832f15b9a16",
+              "size": 43985728
+            },
+            "x86": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.19/fn-browser-x86_64.fpk",
+              "sha256": "bba79350ddc01a348bb44975d03006a6653f89463c74173e3e24580ec888cf39",
+              "size": 44025992
+            }
+          }
+        },
+        "1.0.20": {
+          "changelog": "### 新增\n\n- **界面内设置访问密码**：在主菜单直接设置/关闭访问密码（持久化到 `settings.json`），开启后未登录访问自动弹出密码解锁界面，防止公网 DDNS IPv6 暴露时被未授权利用；同时保留 `AUTH_TOKEN` 环境变量最高优先级锁定。",
+          "updated_at": "2026-11-25T09:21:03+00:00",
+          "packages": {
+            "arm": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.20/fn-browser-arm64.fpk",
+              "sha256": "a3671a5dc18c14ac212d44849a5139daf3603e435dc0fafb04a78b1c6dd9e939",
+              "size": 43987143
+            },
+            "x86": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.20/fn-browser-x86_64.fpk",
+              "sha256": "641324a3d7f69ca7e51c1a007a0df706c789914e0e4369d2f0ba1223f6d549d0",
+              "size": 44027469
+            }
+          }
+        },
+        "1.0.21": {
+          "changelog": "### 优化\n\n- **菜单二级化与独立「设置」中心**：精简右上角主菜单为常用高频操作，新增二级「设置」弹窗，将搜索引擎、界面主题（跟随系统/浅色/深色）、访问密码保护、NAS 下载目录设置、HTTPS 证书下载与连接自检统一收纳其中。",
+          "updated_at": "2026-11-25T09:31:27+00:00",
+          "packages": {
+            "arm": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.21/fn-browser-arm64.fpk",
+              "sha256": "4f83dca355a873627c1807b7415792fd5190f272906cc64099170e2361c242fa",
+              "size": 43988638
+            },
+            "x86": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.21/fn-browser-x86_64.fpk",
+              "sha256": "7a5a31beb22f30f4ccf610c48216c6c7ec0f4007bb19d01d2f22382d445f9641",
+              "size": 44025411
+            }
+          }
+        },
+        "1.0.22": {
+          "changelog": "### 修复\n\n- **彻底修复轻量代理红 🚫 拦截**：在 `/lite-proxy/*` 响应头中补齐 `Cross-Origin-Embedder-Policy: credentialless`，解决 Edge/Chrome 下内嵌 `iframe` 被 `ERR_BLOCKED_BY_RESPONSE` 拦截的问题。\n- **支持 `192.168.1.1` 等内网设备走 Scramjet 满血内核**：为 Wisp 开启 `allow_private_ips`，`http://` 内网设备（如路由器/爱快/OpenWrt）可直接使用 Scramjet 完整渲染与登录；`https://` 自签内网设备（如 PVE）保留走轻量直连跳过证书校验。",
+          "updated_at": "2026-11-25T09:37:19+00:00",
+          "packages": {
+            "arm": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.22/fn-browser-arm64.fpk",
+              "sha256": "cab9fd7ff014063ecd6f27c1fb4e0ab8b80a0a88f0776a256ee3f04a33620d36",
+              "size": 43987506
+            },
+            "x86": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.22/fn-browser-x86_64.fpk",
+              "sha256": "aa42e27a8a1ed33dbad9297b35d190783ba70590e67dd209e4fd73f3af5e55d2",
+              "size": 44027104
+            }
+          }
+        },
+        "1.0.23": {
+          "changelog": "### 修复\n\n- **彻底解决首次访问内核误跳轻量、刷新才恢复的 Bug**：\n  - [sw.js](file:///C:/Users/31936/.gemini/antigravity/scratch/Aurora-Browser/app/www/sw.js) 新增 `skipWaiting()` 与 `clients.claim()`，安装后免刷新立即接管页面；\n  - `navigateTab()` 在安全上下文下会等待 Scramjet 启动完成再分流内核，杜绝抢跑回退。\n- **修复地址栏交互 Bug 并新增桌面级行内自动补齐**：支持点击全选、Chrome 同款历史/书签行内自动补全、中文输入法组词防抖及方向键预览。\n\n### 新增\n\n- **标签页右键菜单与加载动画**：右键标签页支持刷新、复制、关闭其他/右侧标签与恢复关闭页；加载网页时标签图标位显示旋转动画。\n- **地址栏左侧安全状态图标**：实时显示 HTTPS / Scramjet / 轻量内核状态，点击直达连接自检。",
+          "updated_at": "2026-11-25T09:57:41+00:00",
+          "packages": {
+            "arm": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.23/fn-browser-arm64.fpk",
+              "sha256": "9e23656f33e65da066d1c2e0d93ace11540639dc9ffbd4066eb36f4d3b1d9c69",
+              "size": 43988011
+            },
+            "x86": {
+              "download_url": "https://github.com/huidegit2/Aurora-Browser/releases/download/v1.0.23/fn-browser-x86_64.fpk",
+              "sha256": "74c90b88dc33301d7d07ae6f1cc57f4a67c8c935efb5d23b942d8e901ed819b7",
+              "size": 44026111
+            }
+          }
+        }
+      }
+    }
+  }
+}

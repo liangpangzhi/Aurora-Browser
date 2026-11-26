@@ -1,0 +1,152 @@
+#!/bin/bash
+
+### fn-browser (极光 Aurora) lifecycle entry: start / stop / status.
+### Hardened following the conventions of production fnOS packages:
+### - fnOS runs lifecycle scripts with a curated environment that has
+###   no PATH exported; export a sane one so child processes (node and
+###   anything it spawns) can find system binaries.
+### - No `set -e`: a best-effort helper step must never abort the whole
+###   script and surface as "script error, reason unknown".
+### - Real failures write a human-readable reason to
+###   $TRIM_TEMP_LOGFILE before exiting 1, so the app center dialog
+###   shows the actual cause instead of "原因未知".
+
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+APP_DIR="${TRIM_APPDEST:-$(cd "$(dirname "$0")/.." && pwd)/app}"
+VAR_DIR="${TRIM_PKGVAR:-/tmp/fn-browser}"
+
+# TRIM_DATA_SHARE_PATHS is a colon-separated list; use the first entry.
+DATA_SHARE_FIRST="${TRIM_DATA_SHARE_PATHS%%:*}"
+DATA_DIR="${DATA_SHARE_FIRST:-$VAR_DIR/data}"
+
+PID_FILE="$VAR_DIR/fn-browser.pid"
+LOG_FILE="$VAR_DIR/fn-browser.log"
+PORT="${TRIM_SERVICE_PORT:-${SERVICE_PORT:-18920}}"
+
+mkdir -p "$VAR_DIR" 2>/dev/null || true
+mkdir -p "$DATA_DIR" 2>/dev/null || true
+
+fail_with_reason() {
+    local msg="$1"
+    echo "[fn-browser] $msg" >> "$LOG_FILE" 2>/dev/null || true
+    if [ -n "${TRIM_TEMP_LOGFILE:-}" ]; then
+        echo "$msg" > "$TRIM_TEMP_LOGFILE" 2>/dev/null || true
+    fi
+    echo "$msg" >&2
+    exit 1
+}
+
+start_app() {
+    if [ -f "$PID_FILE" ]; then
+        local old_pid
+        old_pid=$(cat "$PID_FILE" 2>/dev/null)
+        if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
+            echo "fn-browser is already running (PID: $old_pid)"
+            return 0
+        fi
+        rm -f "$PID_FILE" 2>/dev/null || true
+    fi
+
+    local NODE_BIN=""
+    if [ -x "$APP_DIR/runtime/node" ]; then
+        NODE_BIN="$APP_DIR/runtime/node"
+    elif command -v node >/dev/null 2>&1; then
+        NODE_BIN="$(command -v node)"
+    else
+        fail_with_reason "未找到 Node.js 运行时，应用启动失败"
+    fi
+
+    mkdir -p "$VAR_DIR/sessions" 2>/dev/null || true
+
+    # Rotate $LOG_FILE if it exceeds 5 MB to prevent unbounded disk growth
+    if [ -f "$LOG_FILE" ]; then
+        local log_size
+        log_size=$(wc -c < "$LOG_FILE" 2>/dev/null || echo 0)
+        if [ "$log_size" -gt 5242880 ]; then
+            mv -f "$LOG_FILE" "${LOG_FILE}.1" 2>/dev/null || : > "$LOG_FILE" 2>/dev/null || true
+        fi
+    fi
+
+    echo "[fn-browser] Starting with Node: $NODE_BIN" >> "$LOG_FILE" 2>/dev/null || true
+    PORT="$PORT" \
+    DATA_DIR="$DATA_DIR" \
+    TRIM_DATA_SHARE_PATHS="${TRIM_DATA_SHARE_PATHS:-}" \
+    CACHE_DIR="$VAR_DIR/sessions" \
+    WWW_DIR="$APP_DIR/www" \
+    AUTH_TOKEN="${AUTH_TOKEN:-}" \
+    NODE_ENV=production \
+    nohup "$NODE_BIN" "$APP_DIR/server/index.js" >> "$LOG_FILE" 2>&1 < /dev/null &
+
+    local pid=$!
+    echo "$pid" > "$PID_FILE" 2>/dev/null || true
+
+    # Give the server a few seconds to come up; a process that dies
+    # immediately is a hard failure and should say why.
+    local i
+    for i in 1 2 3 4 5; do
+        sleep 1
+        if ! kill -0 "$pid" 2>/dev/null; then
+            local tail_log=""
+            tail_log=$(tail -n 5 "$LOG_FILE" 2>/dev/null | tr '\n' ' ')
+            rm -f "$PID_FILE" 2>/dev/null || true
+            fail_with_reason "浏览器服务启动后立即退出。最近日志: ${tail_log:-（无）}"
+        fi
+    done
+
+    echo "fn-browser started successfully (PID: $pid, Port: $PORT)"
+    return 0
+}
+
+stop_app() {
+    if [ -f "$PID_FILE" ]; then
+        local pid
+        pid=$(cat "$PID_FILE" 2>/dev/null)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null || true
+            local count=0
+            while kill -0 "$pid" 2>/dev/null && [ "$count" -lt 5 ]; do
+                sleep 1
+                count=$((count + 1))
+            done
+            if kill -0 "$pid" 2>/dev/null; then
+                kill -9 "$pid" 2>/dev/null || true
+            fi
+            echo "fn-browser stopped (PID: $pid)"
+        fi
+        rm -f "$PID_FILE" 2>/dev/null || true
+    else
+        pkill -f "fn-browser.*server/index.js" 2>/dev/null || true
+        echo "fn-browser stopped (no PID file)"
+    fi
+    return 0
+}
+
+status_app() {
+    if [ -f "$PID_FILE" ]; then
+        local pid
+        pid=$(cat "$PID_FILE" 2>/dev/null)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            echo "running"
+            return 0
+        fi
+    fi
+    echo "stopped"
+    return 3
+}
+
+case "$1" in
+    start)
+        start_app
+        ;;
+    stop)
+        stop_app
+        ;;
+    status)
+        status_app
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|status}" >&2
+        exit 1
+        ;;
+esac

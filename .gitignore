@@ -1,0 +1,6 @@
+app/runtime/
+app/server/node_modules/
+dist/
+*.fpk
+__pycache__/
+*.pyc

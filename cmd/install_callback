@@ -1,0 +1,22 @@
+#!/bin/bash
+
+### This script is called after the package files are extracted.
+### Create the runtime directories the app needs (session cache and
+### data dir). This must never fail the install: no `set -e`, every
+### step is best-effort, and the script always exits 0. cmd/main
+### also runs `mkdir -p` for the same directories on every start
+### as a fallback, so a miss here is not fatal.
+
+VAR_DIR="${TRIM_PKGVAR:-/tmp/fn-browser}"
+
+# TRIM_DATA_SHARE_PATHS is a colon-separated list of share paths;
+# the app uses the first entry (same pattern as the official docs'
+# example main script).
+DATA_SHARE_FIRST="${TRIM_DATA_SHARE_PATHS%%:*}"
+DATA_DIR="${DATA_SHARE_FIRST:-$VAR_DIR/data}"
+
+mkdir -p "$VAR_DIR/sessions" 2>/dev/null || true
+mkdir -p "$DATA_DIR" 2>/dev/null || true
+chmod 755 "$VAR_DIR" 2>/dev/null || true
+
+exit 0

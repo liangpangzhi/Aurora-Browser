@@ -1,0 +1,9 @@
+GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3, 19 November 2007
+
+This project bundles @mercuryworkshop/scramjet and @mercuryworkshop/epoxy-transport
+(AGPL-3.0) as well as @mercuryworkshop/wisp-js (LGPL-3.0-or-later).
+Accordingly, the distributed package and this repository are licensed under the
+terms of the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+Full license text: https://www.gnu.org/licenses/agpl-3.0.txt
